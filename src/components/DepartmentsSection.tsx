@@ -126,7 +126,7 @@ export function DepartmentsSection() {
             >
               {/* Hover gradient background */}
               <div
-                className={`absolute inset-0 bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
               />
 
               {/* Icon */}
