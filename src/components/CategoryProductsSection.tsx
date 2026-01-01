@@ -88,7 +88,7 @@ export function CategoryProductsSection({
             </div>
             <Button
               variant="outline"
-              className="font-body self-start md:self-auto border-2 border-primary/20 hover:border-primary hover:bg-primary/5"
+              className="font-body self-start md:self-auto border-2 border-primary/20 hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-primary-foreground hover:shadow-glow"
             >
               View All {title}
             </Button>
@@ -153,7 +153,11 @@ export function CategoryProductsSection({
                         {product.price}
                       </span>
                     )}
-                    <div className={`flex items-center gap-1 ${!showPrice ? 'ml-auto' : ''}`}>
+                    <div
+                      className={`flex items-center gap-1 ${
+                        !showPrice ? "ml-auto" : ""
+                      }`}
+                    >
                       <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                       <span className="font-body text-xs text-muted-foreground">
                         {product.rating}

@@ -1,12 +1,12 @@
 import { motion } from "framer-motion";
-import { 
-  ShoppingBasket, 
-  Pill, 
-  Laptop, 
-  Shirt, 
+import {
+  ShoppingBasket,
+  Pill,
+  Laptop,
+  Shirt,
   Baby,
   Warehouse,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 
 const departments = [
@@ -21,7 +21,8 @@ const departments = [
   {
     icon: Pill,
     name: "Pharmacy",
-    description: "Over-the-counter medicines, wellness products, and essential medical devices",
+    description:
+      "Over-the-counter medicines, wellness products, and essential medical devices",
     color: "from-teal-500 to-emerald-600",
     items: ["OTC Medicines", "Wellness Products", "Medical Devices"],
     scrollTo: "pharmacy-highlight",
@@ -29,7 +30,8 @@ const departments = [
   {
     icon: Laptop,
     name: "Electronics & Kitchen",
-    description: "Modern electronics, kitchen appliances, utensils, and cookware",
+    description:
+      "Modern electronics, kitchen appliances, utensils, and cookware",
     color: "from-cyan-500 to-teal-600",
     items: ["Electronics", "Appliances", "Utensils", "Cookware"],
     scrollTo: "electronics-highlight",
@@ -37,7 +39,8 @@ const departments = [
   {
     icon: Shirt,
     name: "Textiles & Materials",
-    description: "Quality clothing, fabrics, laces, Ankara, Shaddah, Abayas, gowns, ready-made wear, and a wide range of textile materials",
+    description:
+      "Quality clothing, fabrics, laces, Ankara, Shaddah, Abayas, gowns, ready-made wear, and a wide range of textile materials",
     color: "from-green-500 to-emerald-600",
     items: ["Clothing", "Fabrics", "Laces", "Ankara", "Abayas"],
     scrollTo: "textiles-highlight",
@@ -100,7 +103,8 @@ export function DepartmentsSection() {
             Everything You Need
           </h2>
           <p className="font-body text-muted-foreground max-w-2xl mx-auto text-lg">
-            Six comprehensive departments serving all your shopping needs under one roof
+            Six comprehensive departments serving all your shopping needs under
+            one roof
           </p>
         </motion.div>
 
@@ -121,10 +125,14 @@ export function DepartmentsSection() {
               }`}
             >
               {/* Hover gradient background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-              
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}
+              />
+
               {/* Icon */}
-              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+              <div
+                className={`w-14 h-14 rounded-xl bg-gradient-to-br ${dept.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}
+              >
                 <dept.icon className="h-7 w-7 text-white" />
               </div>
 

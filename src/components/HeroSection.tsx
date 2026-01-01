@@ -1,5 +1,12 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, BadgeCheck, Truck, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ArrowRight,
+  Shield,
+  BadgeCheck,
+  Truck,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState, useCallback } from "react";
 import useEmblaCarousel from "embla-carousel-react";
@@ -16,7 +23,8 @@ const departments = [
     id: 1,
     name: "Superstore",
     tagline: "Fresh groceries & household essentials",
-    description: "Premium quality groceries, fresh produce, and daily essentials for your home.",
+    description:
+      "Premium quality groceries, fresh produce, and daily essentials for your home.",
     image: storeImage,
     icon: "🛒",
   },
@@ -24,7 +32,8 @@ const departments = [
     id: 2,
     name: "Pharmacy",
     tagline: "Licensed healthcare professionals",
-    description: "Certified pharmacists, prescription services, and quality healthcare products.",
+    description:
+      "Certified pharmacists, prescription services, and quality healthcare products.",
     image: pharmacyImage,
     icon: "💊",
   },
@@ -32,7 +41,8 @@ const departments = [
     id: 3,
     name: "Electronics & Kitchen Appliances",
     tagline: "Modern technology for modern living",
-    description: "Kitchen gadgets, home appliances, and cutting-edge electronics.",
+    description:
+      "Kitchen gadgets, home appliances, and cutting-edge electronics.",
     image: electronicsImage,
     icon: "🔌",
   },
@@ -40,7 +50,8 @@ const departments = [
     id: 4,
     name: "Textiles & Materials",
     tagline: "Quality fabrics & fashion materials",
-    description: "Premium textiles, fabrics, and materials for all your fashion needs.",
+    description:
+      "Premium textiles, fabrics, and materials for all your fashion needs.",
     image: textilesImage,
     icon: "🧵",
   },
@@ -48,7 +59,8 @@ const departments = [
     id: 5,
     name: "Baby Care",
     tagline: "Everything for your little ones",
-    description: "Safe, trusted products for babies and toddlers - from diapers to toys.",
+    description:
+      "Safe, trusted products for babies and toddlers - from diapers to toys.",
     image: babyClothsImage,
     icon: "👶",
   },
@@ -75,15 +87,21 @@ export function HeroSection() {
     };
   }, [emblaApi, onSelect]);
 
-  const scrollTo = useCallback((index: number) => {
-    emblaApi?.scrollTo(index);
-  }, [emblaApi]);
+  const scrollTo = useCallback(
+    (index: number) => {
+      emblaApi?.scrollTo(index);
+    },
+    [emblaApi]
+  );
 
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   return (
-    <section id="hero" className="relative min-h-[100vh] flex flex-col overflow-hidden bg-muted">
+    <section
+      id="hero"
+      className="relative min-h-[100vh] flex flex-col overflow-hidden bg-muted"
+    >
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
@@ -102,7 +120,9 @@ export function HeroSection() {
             className="inline-flex items-center gap-2 bg-secondary/10 text-secondary px-4 py-2 rounded-full mb-8"
           >
             <BadgeCheck className="h-4 w-4" />
-            <span className="font-body text-sm font-medium">Licensed Pharmacy & Certified Store</span>
+            <span className="font-body text-sm font-medium">
+              Licensed Pharmacy & Certified Store
+            </span>
           </motion.div>
 
           {/* Main heading */}
@@ -112,10 +132,8 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="font-display text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight mb-6"
           >
-            Your Trusted{" "}
-            <span className="gradient-text">Supermarket</span>
-            <br />
-            & Pharmacy
+            Your Trusted <span className="gradient-text">Supermarket</span>
+            <br />& Pharmacy
           </motion.h1>
 
           {/* Subtitle */}
@@ -125,8 +143,9 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="font-body text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed"
           >
-            Experience premium shopping at Bauchi's most trusted retail destination, 
-            offering quality healthcare, electronics, and everyday essentials — all under one roof.
+            Experience premium shopping at Bauchi's most trusted retail
+            destination, offering quality healthcare, electronics, and everyday
+            essentials — all under one roof.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -139,6 +158,11 @@ export function HeroSection() {
             <Button
               size="lg"
               className="gradient-primary text-primary-foreground font-body px-8 py-6 text-lg rounded-xl shadow-elegant hover:shadow-glow transition-all duration-300 group"
+              onClick={() =>
+                document
+                  .getElementById("superstore-products")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
             >
               Browse Products
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -147,6 +171,11 @@ export function HeroSection() {
               size="lg"
               variant="outline"
               className="font-body px-8 py-6 text-lg rounded-xl border-2 border-primary/20 transition-all duration-300 hover:border-primary/5 hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-primary-foreground hover:shadow-glow"
+              onClick={() =>
+                document
+                  .getElementById("pharmacy-products")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
             >
               Visit Pharmacy
             </Button>
@@ -164,7 +193,9 @@ export function HeroSection() {
                 <Shield className="h-5 w-5 text-primary" />
               </div>
               <div className="text-left">
-                <p className="font-body font-semibold text-foreground text-sm">Licensed</p>
+                <p className="font-body font-semibold text-foreground text-sm">
+                  Licensed
+                </p>
                 <p className="font-body text-xs">Pharmacy</p>
               </div>
             </div>
@@ -173,7 +204,9 @@ export function HeroSection() {
                 <BadgeCheck className="h-5 w-5 text-primary" />
               </div>
               <div className="text-left">
-                <p className="font-body font-semibold text-foreground text-sm">Quality</p>
+                <p className="font-body font-semibold text-foreground text-sm">
+                  Quality
+                </p>
                 <p className="font-body text-xs">Guaranteed</p>
               </div>
             </div>
@@ -182,7 +215,9 @@ export function HeroSection() {
                 <Truck className="h-5 w-5 text-primary" />
               </div>
               <div className="text-left">
-                <p className="font-body font-semibold text-foreground text-sm">In-Store</p>
+                <p className="font-body font-semibold text-foreground text-sm">
+                  In-Store
+                </p>
                 <p className="font-body text-xs">Pickup</p>
               </div>
             </div>
@@ -234,7 +269,9 @@ export function HeroSection() {
                     {/* Content */}
                     <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl md:text-4xl">{dept.icon}</span>
+                        <span className="text-3xl md:text-4xl">
+                          {dept.icon}
+                        </span>
                         <h3 className="text-2xl md:text-4xl font-display font-bold text-primary-foreground">
                           {dept.name}
                         </h3>
@@ -245,7 +282,7 @@ export function HeroSection() {
                       <p className="text-primary-foreground/70 text-sm font-body max-w-md hidden md:block">
                         {dept.description}
                       </p>
-                      
+
                       {/* Explore button */}
                       <Button
                         variant="secondary"
