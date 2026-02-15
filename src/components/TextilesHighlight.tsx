@@ -31,7 +31,18 @@ const features = [
   },
 ];
 
-export function TextilesHighlight() {
+interface TextilesHighlightProps {
+  onViewAll?: () => void;
+}
+
+export function TextilesHighlight({ onViewAll }: TextilesHighlightProps) {
+  const handleViewAll = () => {
+    document.getElementById('textiles-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      onViewAll?.();
+    }, 500);
+  };
+
   return (
     <section id="textiles-highlight" className="py-20 bg-gradient-to-br from-purple-900 to-pink-900 overflow-hidden">
       <div className="container mx-auto px-4">
@@ -131,7 +142,7 @@ export function TextilesHighlight() {
             <div className="flex flex-wrap gap-4">
               <Button 
                 className="font-body bg-pink-500 text-white hover:bg-pink-400 px-6"
-                onClick={() => document.getElementById('textiles-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 Explore Fabrics
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -139,7 +150,7 @@ export function TextilesHighlight() {
               <Button 
                 variant="outline" 
                 className="font-body border-2 border-white/30 bg-transparent text-white hover:bg-white/10 hover:border-white/50"
-                onClick={() => document.getElementById('textiles-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 View Collection
               </Button>

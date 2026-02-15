@@ -31,7 +31,20 @@ const features = [
   },
 ];
 
-export function SuperstoreHighlight() {
+interface SuperstoreHighlightProps {
+  onViewAll?: () => void;
+}
+
+export function SuperstoreHighlight({ onViewAll }: SuperstoreHighlightProps) {
+  const handleViewAll = () => {
+    // Scroll to the section
+    document.getElementById('superstore-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Trigger expand after a short delay
+    setTimeout(() => {
+      onViewAll?.();
+    }, 500);
+  };
+
   return (
     <section id="superstore-highlight" className="py-20 bg-primary overflow-hidden">
       <div className="container mx-auto px-4">
@@ -93,7 +106,7 @@ export function SuperstoreHighlight() {
               <Button 
                 variant="outline" 
                 className="font-body border-2 border-primary-foreground/30 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/50"
-                onClick={() => document.getElementById('superstore-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 View All Products
               </Button>

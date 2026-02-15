@@ -31,7 +31,18 @@ const features = [
   },
 ];
 
-export function ElectronicsHighlight() {
+interface ElectronicsHighlightProps {
+  onViewAll?: () => void;
+}
+
+export function ElectronicsHighlight({ onViewAll }: ElectronicsHighlightProps) {
+  const handleViewAll = () => {
+    document.getElementById('electronics-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      onViewAll?.();
+    }, 500);
+  };
+
   return (
     <section id="electronics-highlight" className="py-20 bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
       <div className="container mx-auto px-4">
@@ -93,7 +104,7 @@ export function ElectronicsHighlight() {
               <Button 
                 variant="outline" 
                 className="font-body border-2 border-white/30 bg-transparent text-white hover:bg-white/10 hover:border-white/50"
-                onClick={() => document.getElementById('electronics-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 Browse Electronics
               </Button>

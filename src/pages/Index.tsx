@@ -25,6 +25,19 @@ const Index = () => {
   const [textilesProducts, setTextilesProducts] = useState<any[]>([]);
   const [babyCareProducts, setBabyCareProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Expansion states for each department
+  const [expandedDepts, setExpandedDepts] = useState<Record<string, boolean>>({
+    superstore: false,
+    pharmacy: false,
+    electronics: false,
+    textiles: false,
+    babyCare: false,
+  });
+
+  const toggleExpand = (dept: string) => {
+    setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
 
   useEffect(() => {
     loadData();
@@ -66,13 +79,18 @@ const Index = () => {
     }
   };
 
+  // Helper to get department ID by slug
+  const getDeptId = (slug: string) => {
+    return departments.find(d => d.slug === slug)?.id;
+  };
+
   const transformProducts = (products: PublicProduct[]) => {
     return products.map((product) => ({
       id: product.id,
       name: product.name,
       price: product.price ? `₦${product.price.toLocaleString()}` : "₦0",
       rating: 4.8, // Default rating
-      image: product.image_full_url || product.image_url || "https://via.placeholder.com/400",
+      image: product.image_full_url || product.image_url || "https://placehold.co/400x400?text=No+Image",
       badge: null,
     }));
   };
@@ -96,53 +114,68 @@ const Index = () => {
         <DepartmentsSection />
         
         {/* Superstore */}
-        <SuperstoreHighlight />
+        <SuperstoreHighlight onViewAll={() => toggleExpand('superstore')} />
         <CategoryProductsSection
           id="superstore-products"
           title="Superstore"
           subtitle="Groceries & Essentials"
           products={superstoreProducts}
           bgClass="bg-muted/30"
+          departmentId={getDeptId('superstore')}
+          isExpanded={expandedDepts.superstore}
+          onToggleExpand={() => toggleExpand('superstore')}
         />
         
         {/* Pharmacy */}
-        <PharmacyHighlight />
+        <PharmacyHighlight onViewAll={() => toggleExpand('pharmacy')} />
         <CategoryProductsSection
           id="pharmacy-products"
           title="Pharmacy"
           subtitle="Health & Wellness"
           products={pharmacyProducts}
           bgClass="bg-background"
+          departmentId={getDeptId('pharmacy')}
+          isExpanded={expandedDepts.pharmacy}
+          onToggleExpand={() => toggleExpand('pharmacy')}
         />
         
         {/* Electronics */}
-        <ElectronicsHighlight />
+        <ElectronicsHighlight onViewAll={() => toggleExpand('electronics')} />
         <CategoryProductsSection
           id="electronics-products"
           title="Electronics & Kitchen"
           subtitle="Appliances & Gadgets"
           products={electronicsProducts}
           bgClass="bg-muted/30"
+          departmentId={getDeptId('electronics-kitchen')}
+          isExpanded={expandedDepts.electronics}
+          onToggleExpand={() => toggleExpand('electronics')}
         />
         
         {/* Textiles */}
-        <TextilesHighlight />
+        <TextilesHighlight onViewAll={() => toggleExpand('textiles')} />
         <CategoryProductsSection
           id="textiles-products"
           title="Textiles & Materials"
           subtitle="Fabrics & Home Decor"
           products={textilesProducts}
           bgClass="bg-background"
+          departmentId={getDeptId('textiles')}
+          isExpanded={expandedDepts.textiles}
+          onToggleExpand={() => toggleExpand('textiles')}
         />
         
         {/* Baby Care */}
-        <BabyCareHighlight />
+        <BabyCareHighlight onViewAll={() => toggleExpand('babyCare')} />
         <CategoryProductsSection
           id="babycare-products"
           title="Baby Care"
           subtitle="For Your Little Ones"
           products={babyCareProducts}
           bgClass="bg-muted/30"
+          departmentId={getDeptId('baby-care')}
+          isExpanded={expandedDepts.babyCare}
+          onToggleExpand={() => toggleExpand('babyCare')}
         />
         
         <TrustSection />

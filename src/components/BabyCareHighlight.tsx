@@ -32,7 +32,18 @@ const features = [
   },
 ];
 
-export function BabyCareHighlight() {
+interface BabyCareHighlightProps {
+  onViewAll?: () => void;
+}
+
+export function BabyCareHighlight({ onViewAll }: BabyCareHighlightProps) {
+  const handleViewAll = () => {
+    document.getElementById('babycare-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      onViewAll?.();
+    }, 500);
+  };
+
   return (
     <section id="babycare-highlight" className="py-20 bg-gradient-to-br from-teal-50 to-cyan-100 overflow-hidden">
       <div className="container mx-auto px-4">
@@ -84,7 +95,7 @@ export function BabyCareHighlight() {
             <div className="flex flex-wrap gap-4">
               <Button 
                 className="font-body bg-teal-600 text-white hover:bg-teal-500 px-6"
-                onClick={() => document.getElementById('babycare-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 Shop Baby Care
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -92,7 +103,7 @@ export function BabyCareHighlight() {
               <Button 
                 variant="outline" 
                 className="font-body border-2 border-teal-600 bg-transparent text-teal-600 hover:bg-teal-600 hover:text-white"
-                onClick={() => document.getElementById('babycare-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 View All Products
               </Button>

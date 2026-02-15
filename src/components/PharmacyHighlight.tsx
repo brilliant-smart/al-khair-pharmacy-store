@@ -32,7 +32,18 @@ const features = [
   },
 ];
 
-export function PharmacyHighlight() {
+interface PharmacyHighlightProps {
+  onViewAll?: () => void;
+}
+
+export function PharmacyHighlight({ onViewAll }: PharmacyHighlightProps) {
+  const handleViewAll = () => {
+    document.getElementById('pharmacy-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      onViewAll?.();
+    }, 500);
+  };
+
   return (
     <section id="pharmacy-highlight" className="py-24 bg-secondary text-secondary-foreground relative overflow-hidden">
       {/* Decorative elements */}
@@ -88,7 +99,7 @@ export function PharmacyHighlight() {
               <Button
                 size="lg"
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-body rounded-xl group"
-                onClick={() => document.getElementById('pharmacy-products')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                onClick={handleViewAll}
               >
                 Visit Pharmacy
                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

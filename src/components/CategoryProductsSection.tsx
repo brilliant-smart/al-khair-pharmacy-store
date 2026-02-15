@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Star, ShoppingCart, Eye } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Star, ShoppingCart, Eye, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductImageModal } from "./ProductImageModal";
 import { useToast } from "@/hooks/use-toast";
+import { fetchPublicProducts, PublicProduct } from "@/app/api/publicProducts";
 
 export interface Product {
   id: number;
@@ -23,6 +24,9 @@ interface CategoryProductsSectionProps {
   products: Product[];
   bgClass?: string;
   showPrice?: boolean;
+  departmentId?: number;
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
   viewAllHref?: string;
 }
 
@@ -57,9 +61,55 @@ export function CategoryProductsSection({
   bgClass = "bg-background",
   showPrice = false,
   viewAllHref,
+  departmentId,
+  isExpanded = false,
+  onToggleExpand,
 }: CategoryProductsSectionProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [loadingAll, setLoadingAll] = useState(false);
   const { toast } = useToast();
+
+  // Fetch all products when expanded
+  useEffect(() => {
+    if (isExpanded && departmentId && allProducts.length === 0) {
+      loadAllProducts();
+    }
+  }, [isExpanded, departmentId]);
+
+  const loadAllProducts = async () => {
+    if (!departmentId) return;
+    
+    try {
+      setLoadingAll(true);
+      const apiProducts = await fetchPublicProducts(departmentId, 100); // Fetch up to 100 products
+      
+      // Transform API products to match Product interface
+      const transformed = apiProducts.map((product: PublicProduct) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price ? `₦${product.price.toLocaleString()}` : "₦0",
+        rating: 4.8,
+        image: product.image_full_url || product.image_url || PLACEHOLDER_IMAGE,
+        badge: null,
+        slug: product.slug,
+      }));
+      
+      setAllProducts(transformed);
+    } catch (error) {
+      console.error("Error loading all products:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load all products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingAll(false);
+    }
+  };
+
+  // Show all products when expanded (and loaded), otherwise show initial products
+  const displayProducts = isExpanded && allProducts.length > 0 ? allProducts : products;
 
   const handleAddToCart = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -110,8 +160,31 @@ export function CategoryProductsSection({
               <Button
                 variant="outline"
                 className="font-body self-start md:self-auto border-2 border-primary/20 hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:text-primary-foreground hover:shadow-glow"
+                onClick={onToggleExpand}
+                disabled={loadingAll}
               >
-                View All {title}
+                {loadingAll ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="mr-2"
+                    >
+                      ⏳
+                    </motion.div>
+                    Loading...
+                  </>
+                ) : isExpanded ? (
+                  <>
+                    <ChevronUp className="mr-2 h-4 w-4" />
+                    Show Less
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 h-4 w-4" />
+                    View All {title}
+                  </>
+                )}
               </Button>
             )}
           </motion.div>
@@ -124,7 +197,7 @@ export function CategoryProductsSection({
             viewport={{ once: true }}
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
           >
-            {products.map((product) => {
+            {displayProducts.map((product) => {
               const CardWrapper = product.slug ? Link : "div";
               const cardProps = product.slug
                 ? { to: `/products/${product.slug}` }
@@ -197,6 +270,7 @@ export function CategoryProductsSection({
               );
             })}
           </motion.div>
+
         </div>
       </section>
 
