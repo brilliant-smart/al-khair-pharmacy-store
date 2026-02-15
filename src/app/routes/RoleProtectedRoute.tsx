@@ -8,10 +8,10 @@ interface Props {
 }
 
 export default function RoleProtectedRoute({ allowedRoles, children }: Props) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (loading) {
+    return <div className="spinner">Loading...</div>;
   }
 
   if (!user || !allowedRoles.includes(user.role)) {

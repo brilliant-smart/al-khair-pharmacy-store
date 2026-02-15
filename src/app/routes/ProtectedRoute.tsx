@@ -6,7 +6,11 @@ export default function ProtectedRoute({
 }: {
   children: JSX.Element;
 }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="spinner">Loading...</div>;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

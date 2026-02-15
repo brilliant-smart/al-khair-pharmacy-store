@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 .env
 .env.*
+
+# Atlassian Rovo Dev
+.rovodev/
+AGENTS.md
+AGENTS.local.md
+.rovo-dev/

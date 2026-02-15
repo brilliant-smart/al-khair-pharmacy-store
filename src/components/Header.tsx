@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ShoppingCart, Menu, X, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 const navLinks = [
-  { name: "Home", href: "#hero" },
-  { name: "Departments", href: "#departments" },
-  { name: "Shop", href: "#products" },
-  { name: "Pharmacy", href: "#pharmacy" },
-  { name: "About", href: "#about" },
-  { name: "Contact", href: "#contact" },
+  { name: "Home", to: "/" },
+  { name: "Departments", to: "/#departments" },
+  { name: "Shop", to: "/#all-products" },
+  { name: "Pharmacy", to: "/#pharmacy-highlight" },
+  { name: "About", to: "/#about" },
+  { name: "Contact", to: "/#contact" },
 ];
 
 const scrollToSection = (href: string) => {
@@ -30,6 +31,8 @@ const scrollToSection = (href: string) => {
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const location = useLocation();
+  const isHome = location.pathname === "/";
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
@@ -49,8 +52,14 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-8">
           {/* Logo */}
-          <button
-            onClick={() => scrollToSection("#hero")}
+          <Link
+            to="/"
+            onClick={(e) => {
+              if (isHome) {
+                e.preventDefault();
+                scrollToSection("#hero");
+              }
+            }}
             className="flex-shrink-0 cursor-pointer"
           >
             <motion.div
@@ -65,7 +74,7 @@ export function Header() {
                 Pharmacy & Store
               </span>
             </motion.div>
-          </button>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
@@ -76,13 +85,19 @@ export function Header() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <button
-                  onClick={() => scrollToSection(link.href)}
-                  className="font-body text-foreground/80 hover:text-primary transition-colors duration-300 relative group"
+                <Link
+                  to={link.to}
+                  onClick={(e) => {
+                    if (isHome && link.to.startsWith("/#")) {
+                      e.preventDefault();
+                      scrollToSection(link.to.slice(1));
+                    }
+                  }}
+                  className="font-body text-foreground/80 hover:text-primary transition-colors duration-300 relative group block"
                 >
                   {link.name}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
-                </button>
+                </Link>
               </motion.div>
             ))}
           </nav>
@@ -162,15 +177,18 @@ export function Header() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <button
+                  <Link
+                    to={link.to}
                     onClick={() => {
-                      scrollToSection(link.href);
+                      if (isHome && link.to.startsWith("/#")) {
+                        scrollToSection(link.to.slice(1));
+                      }
                       setIsMenuOpen(false);
                     }}
                     className="font-body text-foreground/80 hover:text-primary transition-colors block py-2 w-full text-left"
                   >
                     {link.name}
-                  </button>
+                  </Link>
                 </motion.div>
               ))}
             </nav>

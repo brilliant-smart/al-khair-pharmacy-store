@@ -15,9 +15,10 @@ export const createProduct = (data: FormData) => {
 };
 
 export const updateProduct = (id: number, data: FormData) => {
-  return api.post(`/products/${id}?_method=PATCH`, data);
+  data.append('_method', 'PUT');
+  return api.post(`/admin/products/${id}`, data);
 };
 
 export const deleteProduct = (id: number) => {
-  return api.delete(`/products/${id}`);
+  return api.delete(`/admin/products/${id}`);
 };
