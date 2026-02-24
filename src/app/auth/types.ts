@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: Role;
   department_id: number | null;
+  avatar_url?: string;
 }
 
 export interface AuthState {

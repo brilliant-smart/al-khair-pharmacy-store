@@ -160,12 +160,47 @@ export default function UserList() {
     try {
       if (editingUser) {
         // For update, only send changed fields
-        const updateData: any = {
-          role: formData.role,
-        };
+        const updateData: any = {};
 
+        // Update name if changed
+        if (formData.name !== editingUser.name) {
+          updateData.name = formData.name;
+        }
+
+        // Update email if changed
+        if (formData.email !== editingUser.email) {
+          updateData.email = formData.email;
+        }
+
+        // Update password if provided
+        if (formData.password) {
+          updateData.password = formData.password;
+        }
+
+        // Update role if changed
+        if (formData.role !== editingUser.role) {
+          updateData.role = formData.role;
+        }
+
+        // Update department if changed
         if (formData.role === "section_head" && formData.department_id) {
-          updateData.department_id = Number(formData.department_id);
+          if (Number(formData.department_id) !== editingUser.department_id) {
+            updateData.department_id = Number(formData.department_id);
+          }
+        }
+
+        // Validate section head has department
+        if (
+          (updateData.role === "section_head" || (formData.role === "section_head" && !updateData.role)) &&
+          !formData.department_id
+        ) {
+          toast({
+            title: "Validation Error",
+            description: "Section head must have a department",
+            variant: "destructive",
+          });
+          setSubmitting(false);
+          return;
         }
 
         await updateUser(editingUser.id, updateData);
@@ -376,51 +411,54 @@ export default function UserList() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!editingUser && (
-              <>
-                <div>
-                  <Label htmlFor="name">Full Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    required
-                    placeholder="John Doe"
-                  />
-                </div>
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                required
+                placeholder="John Doe"
+              />
+            </div>
 
-                <div>
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    required
-                    placeholder="user@alkhair.com"
-                  />
-                </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+                placeholder="user@alkhair.com"
+              />
+            </div>
 
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    required
-                    minLength={8}
-                    placeholder="Minimum 8 characters"
-                  />
-                </div>
-              </>
-            )}
+            <div>
+              <Label htmlFor="password">
+                Password {editingUser ? "(leave blank to keep current)" : "*"}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                required={!editingUser}
+                minLength={8}
+                placeholder={editingUser ? "Enter new password to change" : "Minimum 8 characters"}
+              />
+              {editingUser && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Only enter a password if you want to change it
+                </p>
+              )}
+            </div>
 
             <div>
               <Label htmlFor="role">Role *</Label>

@@ -85,13 +85,20 @@ export function CategoryProductsSection({
       const apiProducts = await fetchPublicProducts(departmentId, 100); // Fetch up to 100 products
       
       // Transform API products to match Product interface
-      const transformed = apiProducts.map((product: PublicProduct) => ({
+      // Sort to show featured products first
+      const sorted = [...apiProducts].sort((a, b) => {
+        if (a.is_featured && !b.is_featured) return -1;
+        if (!a.is_featured && b.is_featured) return 1;
+        return 0;
+      });
+
+      const transformed = sorted.map((product: PublicProduct) => ({
         id: product.id,
         name: product.name,
         price: product.price ? `₦${product.price.toLocaleString()}` : "₦0",
         rating: 4.8,
         image: product.image_full_url || product.image_url || PLACEHOLDER_IMAGE,
-        badge: null,
+        badge: product.is_featured ? "Featured" : null,
         slug: product.slug,
       }));
       
@@ -218,7 +225,8 @@ export function CategoryProductsSection({
 
                       {/* Badge */}
                       {product.badge && (
-                        <span className="absolute top-3 left-3 bg-primary text-primary-foreground font-body text-xs font-medium px-2 py-1 rounded-full">
+                        <span className="absolute top-3 left-3 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 font-body text-xs font-semibold px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-current" />
                           {product.badge}
                         </span>
                       )}

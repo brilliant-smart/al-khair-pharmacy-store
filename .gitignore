@@ -30,3 +30,8 @@ dist-ssr
 AGENTS.md
 AGENTS.local.md
 .rovo-dev/
+
+# Ignore all markdown files
+*.md
+# Except the main README
+!README.md

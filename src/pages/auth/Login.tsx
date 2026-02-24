@@ -33,15 +33,31 @@ const Login = () => {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password) {
-      setError("Please enter both email and password");
+    // Client-side validation
+    if (!email.trim()) {
+      setError("Email is required");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       // Navigate to dashboard on success
       navigate("/admin/dashboard", { replace: true });
     } catch (err: any) {

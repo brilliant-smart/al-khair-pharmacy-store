@@ -11,6 +11,23 @@ import UserList from "@/pages/admin/users/UserList";
 import UserCreate from "@/pages/admin/users/UserCreate";
 import UserEdit from "@/pages/admin/users/UserEdit";
 
+import InventoryAnalytics from "@/pages/admin/InventoryAnalytics";
+
+import Profile from "@/pages/admin/Profile";
+
+import SupplierList from "@/pages/admin/suppliers/SupplierList";
+import SupplierCreate from "@/pages/admin/suppliers/SupplierCreate";
+import SupplierEdit from "@/pages/admin/suppliers/SupplierEdit";
+import PurchaseOrderList from "@/pages/admin/purchase-orders/PurchaseOrderList";
+import PurchaseOrderCreate from "@/pages/admin/purchase-orders/PurchaseOrderCreate";
+import PurchaseOrderEdit from "@/pages/admin/purchase-orders/PurchaseOrderEdit";
+import PurchaseOrderDetail from "@/pages/admin/purchase-orders/PurchaseOrderDetail";
+import SalesList from "@/pages/admin/sales/SalesList";
+import SaleCreate from "@/pages/admin/sales/SaleCreate";
+import FinancialReports from "@/pages/admin/reports/FinancialReports";
+import PriceHistoryDashboard from "@/pages/admin/reports/PriceHistoryDashboard";
+import SupplierPriceComparison from "@/pages/admin/reports/SupplierPriceComparison";
+
 import RoleProtectedRoute from "./RoleProtectedRoute";
 
 export default function AdminRoutes() {
@@ -86,6 +103,149 @@ export default function AdminRoutes() {
               }
             />
           </Route>
+
+          {/* Suppliers Routes */}
+          <Route
+            path="suppliers"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <SupplierList />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="suppliers/create"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin"]}
+              >
+                <SupplierCreate />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="suppliers/:id/edit"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin"]}
+              >
+                <SupplierEdit />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Purchase Orders Routes */}
+          <Route
+            path="purchase-orders"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <PurchaseOrderList />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="purchase-orders/create"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <PurchaseOrderCreate />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="purchase-orders/:id/edit"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <PurchaseOrderEdit />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="purchase-orders/:id"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <PurchaseOrderDetail />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Sales Routes */}
+          <Route
+            path="sales"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <SalesList />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="sales/create"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <SaleCreate />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Financial Reports Route */}
+          <Route
+            path="reports"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <FinancialReports />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="reports/price-history"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin"]}
+              >
+                <PriceHistoryDashboard />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="reports/supplier-comparison"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin"]}
+              >
+                <SupplierPriceComparison />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Analytics Route */}
+          <Route
+            path="analytics"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <InventoryAnalytics />
+              </RoleProtectedRoute>
+            }
+          />
+
+          {/* Profile Route */}
+          <Route path="profile" element={<Profile />} />
         </Routes>
       </AdminLayout>
     </ProtectedRoute>

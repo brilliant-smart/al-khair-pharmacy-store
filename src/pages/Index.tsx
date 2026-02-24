@@ -85,13 +85,21 @@ const Index = () => {
   };
 
   const transformProducts = (products: PublicProduct[]) => {
-    return products.map((product) => ({
+    // Sort to show featured products first
+    const sorted = [...products].sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      return 0;
+    });
+
+    return sorted.map((product) => ({
       id: product.id,
       name: product.name,
       price: product.price ? `₦${product.price.toLocaleString()}` : "₦0",
       rating: 4.8, // Default rating
       image: product.image_full_url || product.image_url || "https://placehold.co/400x400?text=No+Image",
-      badge: null,
+      badge: product.is_featured ? "Featured" : null,
+      slug: product.slug,
     }));
   };
 

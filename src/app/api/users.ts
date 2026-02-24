@@ -17,6 +17,9 @@ export const createUser = (data: {
 export const updateUser = (
   id: number,
   data: {
+    name?: string;
+    email?: string;
+    password?: string;
     role?: "master_admin" | "section_head";
     department_id?: number;
     is_active?: boolean;

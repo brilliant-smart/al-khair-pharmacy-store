@@ -4,12 +4,18 @@ export interface PublicProduct {
   id: number;
   name: string;
   slug: string;
+  sku?: string | null;
   price: number;
+  stock_quantity?: number;
+  low_stock_threshold?: number;
+  stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock';
   image?: string | null;
   /** Laravel Product appends image_full_url (full URL to storage) */
   image_full_url?: string | null;
   image_url?: string | null;
   department_id?: number; // optional for list views
+  is_featured?: boolean; // featured products flag
+  is_active?: boolean; // product active status
 }
 
 /**

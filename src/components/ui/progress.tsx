@@ -9,13 +9,43 @@ const Progress = React.forwardRef<
 >(({ className, value, ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
-    className={cn("relative h-4 w-full overflow-hidden rounded-full bg-secondary", className)}
+    className={cn(
+      "relative h-4 w-full overflow-hidden rounded-full",
+      // Beautiful gradient background for pending section
+      "bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200",
+      // Subtle shadow for depth
+      "shadow-inner",
+      className
+    )}
     {...props}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all"
+      className={cn(
+        "h-full w-full flex-1 transition-all duration-500 ease-out",
+        // Beautiful 3D dark-green gradient matching the theme
+        "bg-gradient-to-r from-emerald-600 via-green-600 to-teal-700",
+        // Add shine effect
+        "relative overflow-hidden",
+        // Add depth with shadow
+        "shadow-lg"
+      )}
       style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
-    />
+    >
+      {/* White separator line at the edge */}
+      <div 
+        className="absolute right-0 top-0 bottom-0 w-[3px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"
+        style={{ 
+          boxShadow: '0 0 8px rgba(255,255,255,0.8), -2px 0 6px rgba(0,0,0,0.3)'
+        }}
+      />
+      {/* Animated shine overlay */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20"
+        style={{
+          animation: 'shine 2s ease-in-out infinite',
+        }}
+      />
+    </ProgressPrimitive.Indicator>
   </ProgressPrimitive.Root>
 ));
 Progress.displayName = ProgressPrimitive.Root.displayName;
