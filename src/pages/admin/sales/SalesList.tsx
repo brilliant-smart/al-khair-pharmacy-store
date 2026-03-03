@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,35 @@ export default function SalesList() {
       toast.error(error.message || 'Failed to load sales');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePrintReceipt = async (saleId: number) => {
+    try {
+      // Get the auth token
+      const token = localStorage.getItem('token');
+      
+      // Open receipt in new window with auth header
+      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/sales/${saleId}/receipt`;
+      
+      // Create a form and submit it to open in new window with auth
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = url;
+      form.target = '_blank';
+      
+      // Add auth token as a parameter
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = token || '';
+      form.appendChild(tokenInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    } catch (error: any) {
+      toast.error('Failed to open receipt');
     }
   };
 
@@ -72,14 +101,24 @@ export default function SalesList() {
                       <p className="text-sm text-muted-foreground">Customer: {sale.customer_name}</p>
                     )}
                   </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-2xl font-bold">₦{parseFloat(sale.total_amount || 0).toLocaleString()}</p>
-                    <p className="text-sm text-green-600">
-                      Profit: ₦{parseFloat(sale.gross_profit || sale.total_profit || 0).toLocaleString()} ({(sale.profit_margin || 0).toFixed(1)}%)
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      COGS: ₦{parseFloat(sale.cost_of_goods_sold || sale.cost_of_goods || 0).toLocaleString()}
-                    </p>
+                  <div className="flex items-start gap-4">
+                    <div className="text-right space-y-1">
+                      <p className="text-2xl font-bold">₦{parseFloat(sale.total_amount || 0).toLocaleString()}</p>
+                      <p className="text-sm text-green-600">
+                        Profit: ₦{parseFloat(sale.gross_profit || sale.total_profit || 0).toLocaleString()} ({(sale.profit_margin || 0).toFixed(1)}%)
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        COGS: ₦{parseFloat(sale.cost_of_goods_sold || sale.cost_of_goods || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePrintReceipt(sale.id)}
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print
+                    </Button>
                   </div>
                 </div>
               </CardContent>

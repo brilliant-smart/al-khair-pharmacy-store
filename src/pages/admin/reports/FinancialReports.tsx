@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { reportsApi } from '@/app/api/reports';
 import { toast } from 'sonner';
+import { DatePicker } from '@/components/DatePicker';
 
 export default function FinancialReports() {
   const [loading, setLoading] = useState(false);
@@ -59,18 +60,16 @@ export default function FinancialReports() {
           <div className="flex items-end gap-4">
             <div className="flex-1 space-y-2">
               <Label>Start Date</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dateRange.start_date}
-                onChange={(e) => setDateRange({ ...dateRange, start_date: e.target.value })}
+                onChange={(v) => setDateRange({ ...dateRange, start_date: v })}
               />
             </div>
             <div className="flex-1 space-y-2">
               <Label>End Date</Label>
-              <Input
-                type="date"
+              <DatePicker
                 value={dateRange.end_date}
-                onChange={(e) => setDateRange({ ...dateRange, end_date: e.target.value })}
+                onChange={(v) => setDateRange({ ...dateRange, end_date: v })}
               />
             </div>
             <Button onClick={loadReports} disabled={loading}>

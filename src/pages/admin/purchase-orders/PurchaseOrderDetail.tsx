@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Package, CheckCircle2, Edit, XCircle, Clock, FileText } from 'lucide-react';
+import { ArrowLeft, Download, Package, CheckCircle2, Edit, XCircle, Clock, FileText, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,8 @@ import { purchaseOrderApi } from '@/app/api/purchaseOrders';
 import { PurchaseOrder } from '@/types/ims';
 import { toast } from 'sonner';
 import Swal from 'sweetalert2';
-import { DatePickerWithToday } from '@/components/DatePickerWithToday';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
+import { DatePicker } from '@/components/DatePicker';
 import { useAuth } from '@/app/auth/AuthContext';
 
 export default function PurchaseOrderDetail() {
@@ -109,17 +110,21 @@ export default function PurchaseOrderDetail() {
   const [receivingItems, setReceivingItems] = useState<any[]>([]);
 
   const handleReceiveClick = async () => {
-    // CRITICAL: Check if payment has been recorded
+    // WORLD-CLASS: Check payment requirement based on payment method
+    // For CREDIT purchases: Allow receiving goods (pay later)
+    // For CASH/IMMEDIATE purchases: Require payment first
     const isPaid = order?.payment_status === 'paid' || order?.payment_status === 'partially_paid';
+    const isCreditPurchase = ['credit', 'credit_7', 'credit_14', 'credit_30', 'credit_60'].includes(order?.payment_method || '');
     
-    if (!isPaid) {
+    // Only enforce payment for non-credit purchases
+    if (!isCreditPurchase && !isPaid) {
       // Small delay for any previous dialogs
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const result = await Swal.fire({
         title: 'Payment Required',
         html: `
-          <p><strong>Payment must be recorded before receiving goods.</strong></p>
+          <p><strong>Payment must be recorded before receiving goods for cash/immediate purchases.</strong></p>
           <p class="text-sm text-gray-600 mt-2">This ensures proper financial tracking.</p>
           <p class="text-sm text-gray-600 mt-2">Total Amount: <strong>₦${order?.total_amount?.toLocaleString()}</strong></p>
           <p class="text-sm mt-3">Would you like to record payment now?</p>
@@ -138,7 +143,7 @@ export default function PurchaseOrderDetail() {
       return;
     }
     
-    // Initialize receiving quantities
+    // Initialize receiving quantities with batch/expiry tracking
     const items = order?.items?.map(item => ({
       id: item.id,
       product_id: item.product_id,
@@ -147,13 +152,18 @@ export default function PurchaseOrderDetail() {
       quantity_already_received: item.quantity_received || 0,
       quantity_to_receive: item.quantity_ordered - (item.quantity_received || 0),
       unit_cost: item.unit_cost,
+      batch_number: item.batch_number || '',
+      manufacturing_date: item.manufacturing_date || '',
+      expiry_date: item.expiry_date || '',
+      track_batch: item.product?.track_batch || false,
+      track_expiry: item.product?.track_expiry || false,
     })) || [];
     setReceivingItems(items);
     setShowReceiveDialog(true);
   };
 
   const handleConfirmReceive = async () => {
-    // Validate
+    // Validate quantities
     const hasInvalidQuantity = receivingItems.some(
       item => item.quantity_to_receive < 0 || 
       item.quantity_to_receive > (item.quantity_ordered - item.quantity_already_received)
@@ -169,6 +179,46 @@ export default function PurchaseOrderDetail() {
     if (itemsToReceive.length === 0) {
       toast.error('Please specify quantities to receive');
       return;
+    }
+
+    // Validate batch/expiry requirements
+    for (let i = 0; i < itemsToReceive.length; i++) {
+      const item = itemsToReceive[i];
+      
+      // Check if batch number is required
+      if (item.track_batch && !item.batch_number) {
+        toast.error(`Batch number is required for "${item.product_name}"`);
+        return;
+      }
+
+      // Check if expiry date is required
+      if (item.track_expiry && !item.expiry_date) {
+        toast.error(`Expiry date is required for "${item.product_name}"`);
+        return;
+      }
+
+      // Validate expiry date is in the future
+      if (item.expiry_date) {
+        const expiryDate = new Date(item.expiry_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (expiryDate < today) {
+          toast.error(`Expiry date must be in the future for "${item.product_name}"`);
+          return;
+        }
+      }
+
+      // Validate manufacturing date is before expiry date
+      if (item.manufacturing_date && item.expiry_date) {
+        const mfgDate = new Date(item.manufacturing_date);
+        const expDate = new Date(item.expiry_date);
+        
+        if (mfgDate >= expDate) {
+          toast.error(`Manufacturing date must be before expiry date for "${item.product_name}"`);
+          return;
+        }
+      }
     }
 
     // CRITICAL FIX: Close the dialog FIRST to prevent z-index conflicts
@@ -202,6 +252,9 @@ export default function PurchaseOrderDetail() {
         items: itemsToReceive.map(item => ({
           product_id: item.product_id,
           quantity_received: item.quantity_to_receive,
+          batch_number: item.batch_number || null,
+          manufacturing_date: item.manufacturing_date || null,
+          expiry_date: item.expiry_date || null,
         }))
       };
       
@@ -221,8 +274,39 @@ export default function PurchaseOrderDetail() {
     setReceivingItems(updated);
   };
 
-  const handleExportPDF = () => {
-    window.open(`http://localhost:8000/api/purchase-orders/${id}/pdf`, '_blank');
+  const updateReceivingField = (index: number, field: string, value: any) => {
+    const updated = [...receivingItems];
+    updated[index] = { ...updated[index], [field]: value };
+    setReceivingItems(updated);
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      // Get the auth token
+      const token = localStorage.getItem('token');
+      
+      // Open PDF in new window with auth header
+      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/purchase-orders/${id}/pdf`;
+      
+      // Create a form and submit it to open in new window with auth
+      const form = document.createElement('form');
+      form.method = 'GET';
+      form.action = url;
+      form.target = '_blank';
+      
+      // Add auth token as a parameter
+      const tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'token';
+      tokenInput.value = token || '';
+      form.appendChild(tokenInput);
+      
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    } catch (error: any) {
+      toast.error('Failed to open PDF');
+    }
   };
 
   const handleRecordPayment = async () => {
@@ -353,15 +437,29 @@ export default function PurchaseOrderDetail() {
         </Badge>
       );
       nextAction = 'Waiting for approval';
-    } else if (isApproved && !isPaid) {
-      progress = 50;
-      statusBadge = (
-        <Badge variant="default" className="flex items-center gap-1 bg-blue-100 text-blue-800 border-blue-300">
-          <span className="font-bold">₦</span>
-          APPROVED - PAYMENT PENDING
-        </Badge>
-      );
-      nextAction = 'Record payment';
+    } else if (isApproved && !isPaid && !isReceived) {
+      // Check if credit purchase (can receive without payment)
+      const isCreditPurchase = ['credit', 'credit_7', 'credit_14', 'credit_30', 'credit_60'].includes(order.payment_method || '');
+      
+      if (isCreditPurchase) {
+        progress = 60;
+        statusBadge = (
+          <Badge variant="default" className="flex items-center gap-1 bg-purple-100 text-purple-800 border-purple-300">
+            <Package className="h-3 w-3" />
+            APPROVED - READY TO RECEIVE (CREDIT)
+          </Badge>
+        );
+        nextAction = 'Receive goods (payment due later)';
+      } else {
+        progress = 50;
+        statusBadge = (
+          <Badge variant="default" className="flex items-center gap-1 bg-blue-100 text-blue-800 border-blue-300">
+            <span className="font-bold">₦</span>
+            APPROVED - PAYMENT PENDING
+          </Badge>
+        );
+        nextAction = 'Record payment';
+      }
     } else if (isApproved && isPaid && !isReceived) {
       progress = 75;
       statusBadge = (
@@ -422,15 +520,19 @@ export default function PurchaseOrderDetail() {
               Approve PO
             </Button>
           )}
+          {/* Show payment button first if needed for non-credit purchases */}
+          {order.payment_status !== 'paid' && order.status !== 'draft' && order.status !== 'cancelled' && (
+            <Button 
+              onClick={handlePaymentDialogOpen} 
+              variant={order.status === 'approved' && !['credit', 'credit_7', 'credit_14', 'credit_30', 'credit_60'].includes(order.payment_method || '') ? 'default' : 'outline'}
+            >
+              ₦ Record Payment
+            </Button>
+          )}
           {order.status === 'approved' && (
             <Button onClick={handleReceiveClick}>
               <Package className="mr-2 h-4 w-4" />
               Receive Goods
-            </Button>
-          )}
-          {order.payment_status !== 'paid' && order.status !== 'draft' && order.status !== 'cancelled' && (
-            <Button onClick={handlePaymentDialogOpen} variant="outline">
-              ₦ Record Payment
             </Button>
           )}
           {/* CANCEL: Master Admin Only */}
@@ -446,8 +548,6 @@ export default function PurchaseOrderDetail() {
           </Button>
         </div>
       </div>
-
-Tool call argument 'replace' pruned from message history.
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
@@ -501,17 +601,10 @@ Tool call argument 'replace' pruned from message history.
             <CardTitle>Financial Summary</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span>₦{parseFloat(order.subtotal).toLocaleString()}</span>
-            </div>
             <div className="flex justify-between text-lg font-bold">
               <span>Total:</span>
               <span>₦{parseFloat(order.total_amount).toLocaleString()}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              * All prices are inclusive of applicable taxes (VAT inclusive)
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -558,30 +651,93 @@ Tool call argument 'replace' pruned from message history.
             {receivingItems.map((item, index) => (
               <Card key={index}>
                 <CardContent className="pt-4">
-                  <div className="grid gap-4 md:grid-cols-4">
-                    <div className="md:col-span-2">
-                      <Label className="text-sm font-medium">{item.product_name}</Label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Ordered: {item.quantity_ordered} | Already Received: {item.quantity_already_received}
-                      </p>
+                  <div className="space-y-4">
+                    {/* Product Info & Quantity */}
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">{item.product_name}</Label>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Ordered: {item.quantity_ordered} | Already Received: {item.quantity_already_received}
+                        </p>
+                        {(item.track_batch || item.track_expiry) && (
+                          <div className="flex gap-2 mt-2">
+                            {item.track_batch && <Badge variant="outline" className="text-xs">📦 Batch Tracking</Badge>}
+                            {item.track_expiry && <Badge variant="outline" className="text-xs">📅 Expiry Tracking</Badge>}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`qty-${index}`}>Receive Qty</Label>
+                        <Input
+                          id={`qty-${index}`}
+                          type="number"
+                          min="0"
+                          max={item.quantity_ordered - item.quantity_already_received}
+                          value={item.quantity_to_receive}
+                          onChange={(e) => updateReceivingQuantity(index, parseInt(e.target.value) || 0)}
+                          className={item.quantity_to_receive > (item.quantity_ordered - item.quantity_already_received) ? 'border-red-500' : ''}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Unit Cost</Label>
+                        <p className="text-sm font-medium pt-2">₦{parseFloat(item.unit_cost || 0).toLocaleString()}</p>
+                      </div>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor={`qty-${index}`}>Receive Qty</Label>
-                      <Input
-                        id={`qty-${index}`}
-                        type="number"
-                        min="0"
-                        max={item.quantity_ordered - item.quantity_already_received}
-                        value={item.quantity_to_receive}
-                        onChange={(e) => updateReceivingQuantity(index, parseInt(e.target.value) || 0)}
-                        className={item.quantity_to_receive > (item.quantity_ordered - item.quantity_already_received) ? 'border-red-500' : ''}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>Unit Cost</Label>
-                      <p className="text-sm font-medium pt-2">₦{parseFloat(item.unit_cost || 0).toLocaleString()}</p>
+
+                    {/* Batch & Expiry Fields */}
+                    <div className="grid grid-cols-3 gap-4 pt-3 border-t">
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                          Batch Number {item.track_batch && <span className="text-red-500">*</span>}
+                        </Label>
+                        <Input
+                          type="text"
+                          placeholder={item.track_batch ? "Required" : "Optional"}
+                          value={item.batch_number || ''}
+                          onChange={(e) => updateReceivingField(index, 'batch_number', e.target.value)}
+                          className={item.track_batch ? 'border-blue-300' : ''}
+                        />
+                        {item.track_batch && (
+                          <p className="text-xs text-muted-foreground">
+                            ⚠️ Required for this product
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                          Manufacturing Date (Optional)
+                        </Label>
+                        <MonthYearPicker
+                          value={item.manufacturing_date || ''}
+                          onChange={(v) => updateReceivingField(index, 'manufacturing_date', v)}
+                          placeholder="Select month & year"
+                          maxDate={new Date()}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Calendar className="h-3.5 w-3.5 text-orange-500" />
+                          Expiry Date {item.track_expiry && <span className="text-red-500">*</span>}
+                        </Label>
+                        <MonthYearPicker
+                          value={item.expiry_date || ''}
+                          onChange={(v) => updateReceivingField(index, 'expiry_date', v)}
+                          placeholder={item.track_expiry ? "Required" : "Optional"}
+                          minDate={new Date()}
+                          className={item.track_expiry ? 'border-orange-300' : ''}
+                        />
+                        {item.track_expiry && (
+                          <p className="text-xs text-muted-foreground">
+                            ⚠️ Required for this product
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -668,9 +824,10 @@ Tool call argument 'replace' pruned from message history.
 
             <div className="space-y-2">
               <Label htmlFor="payment-date">Payment Date</Label>
-              <DatePickerWithToday
+              <DatePicker
                 value={paymentData.payment_date}
                 onChange={(v) => setPaymentData({ ...paymentData, payment_date: v })}
+                placeholder="Select payment date"
               />
             </div>
 

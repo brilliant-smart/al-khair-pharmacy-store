@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Scan, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Scan, TrendingUp, Calendar, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,9 +15,11 @@ import { priceHistoryApi } from '@/app/api/priceHistory';
 import { Supplier } from '@/types/ims';
 import { toast } from 'sonner';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { DatePickerWithToday } from '@/components/DatePickerWithToday';
+import { MonthYearPicker } from '@/components/MonthYearPicker';
+import { DatePicker } from '@/components/DatePicker';
 import { useAuth } from '@/app/auth/AuthContext';
 import PriceComparisonModal from '@/components/PriceComparisonModal';
+import { createBarcodeScanner } from '@/utils/barcodeScanner';
 
 export default function PurchaseOrderCreate() {
   const navigate = useNavigate();
@@ -37,15 +39,79 @@ export default function PurchaseOrderCreate() {
     notes: '',
   });
   const [items, setItems] = useState<any[]>([
-    { product_id: '', quantity_ordered: 1, unit_cost: 0, unit_type: 'piece' },
+    { 
+      product_id: '', 
+      quantity_ordered: 1, 
+      unit_cost: 0, 
+      unit_type: 'piece',
+      batch_number: '',
+      expiry_date: '',
+      manufacturing_date: ''
+    },
   ]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanningForIndex, setScanningForIndex] = useState<number | null>(null);
+  const [externalScannerEnabled, setExternalScannerEnabled] = useState(false);
+  const externalScannerRef = useRef<any>(null);
 
   useEffect(() => {
     loadSuppliers();
     loadProducts();
   }, []);
+
+  // External barcode scanner support for PO
+  useEffect(() => {
+    if (externalScannerEnabled && !externalScannerRef.current) {
+      externalScannerRef.current = createBarcodeScanner({
+        onScan: async (barcode) => {
+          try {
+            const product = await productApi.searchByBarcode(barcode);
+            
+            // Find first empty row or add new row
+            const emptyIndex = items.findIndex(item => !item.product_id);
+            if (emptyIndex !== -1) {
+              updateItem(emptyIndex, 'product_id', product.id.toString());
+              if (product.cost_price) {
+                updateItem(emptyIndex, 'unit_cost', product.cost_price);
+              }
+            } else {
+              // Add new item
+              setItems([...items, {
+                product_id: product.id.toString(),
+                quantity: 1,
+                unit_cost: product.cost_price || 0,
+                unit_type: product.unit_type || 'piece',
+                manufacturing_date: '',
+                expiry_date: '',
+                batch_number: '',
+              }]);
+            }
+            
+            toast.success(`Added: ${product.name}`);
+          } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Product not found');
+          }
+        },
+        minLength: 3,
+        maxLength: 50,
+        preventDefault: true,
+        ignoreIfFocusOn: ['input[type="text"]', 'input[type="number"]', 'textarea', 'select'],
+      });
+      
+      externalScannerRef.current.start();
+      toast.info('External barcode scanner enabled');
+    } else if (!externalScannerEnabled && externalScannerRef.current) {
+      externalScannerRef.current.stop();
+      externalScannerRef.current = null;
+      toast.info('External barcode scanner disabled');
+    }
+
+    return () => {
+      if (externalScannerRef.current) {
+        externalScannerRef.current.stop();
+      }
+    };
+  }, [externalScannerEnabled, items]);
 
   const loadSuppliers = async () => {
     try {
@@ -76,7 +142,15 @@ export default function PurchaseOrderCreate() {
   };
 
   const addItem = () => {
-    setItems([...items, { product_id: '', quantity_ordered: 1, unit_cost: 0, unit_type: 'piece' }]);
+    setItems([...items, { 
+      product_id: '', 
+      quantity_ordered: 1, 
+      unit_cost: 0, 
+      unit_type: 'piece',
+      batch_number: '',
+      expiry_date: '',
+      manufacturing_date: ''
+    }]);
   };
 
   const handlePriceComparison = async () => {
@@ -168,6 +242,61 @@ export default function PurchaseOrderCreate() {
       return;
     }
 
+    // WORLD-CLASS VALIDATION: Validate batch/expiry fields based on product settings
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const product = products.find(p => p.id.toString() === item.product_id);
+      
+      if (product) {
+        // Check if batch number is required
+        if (product.track_batch && !item.batch_number?.trim()) {
+          toast.error(`Batch number is required for "${product.name}" (Item ${i + 1})`);
+          return;
+        }
+        
+        // Check if expiry date is required
+        if (product.track_expiry && !item.expiry_date) {
+          toast.error(`Expiry date is required for "${product.name}" (Item ${i + 1})`);
+          return;
+        }
+        
+        // Validate expiry date is in the future if provided
+        if (item.expiry_date) {
+          const expiryDate = new Date(item.expiry_date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          if (expiryDate < today) {
+            toast.error(`Expiry date for "${product.name}" (Item ${i + 1}) cannot be in the past`);
+            return;
+          }
+        }
+        
+        // Validate manufacturing date is not in the future if provided
+        if (item.manufacturing_date) {
+          const mfgDate = new Date(item.manufacturing_date);
+          const today = new Date();
+          today.setHours(23, 59, 59, 999);
+          
+          if (mfgDate > today) {
+            toast.error(`Manufacturing date for "${product.name}" (Item ${i + 1}) cannot be in the future`);
+            return;
+          }
+        }
+        
+        // Validate manufacturing date is before expiry date
+        if (item.manufacturing_date && item.expiry_date) {
+          const mfgDate = new Date(item.manufacturing_date);
+          const expDate = new Date(item.expiry_date);
+          
+          if (mfgDate >= expDate) {
+            toast.error(`Manufacturing date must be before expiry date for "${product.name}" (Item ${i + 1})`);
+            return;
+          }
+        }
+      }
+    }
+
     try {
       setLoading(true);
       await purchaseOrderApi.create({
@@ -198,13 +327,28 @@ export default function PurchaseOrderCreate() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/purchase-orders')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Create Purchase Order</h1>
-          <p className="text-muted-foreground">Order stock from suppliers</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/purchase-orders')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Create Purchase Order</h1>
+            <p className="text-muted-foreground">Order stock from suppliers</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Label htmlFor="external-scanner-po" className="cursor-pointer text-sm font-medium">
+            External Scanner (EVAWGIB/POS Maid)
+          </Label>
+          <input
+            id="external-scanner-po"
+            type="checkbox"
+            checked={externalScannerEnabled}
+            onChange={(e) => setExternalScannerEnabled(e.target.checked)}
+            className="h-4 w-4 cursor-pointer"
+          />
         </div>
       </div>
 
@@ -254,7 +398,7 @@ export default function PurchaseOrderCreate() {
 
               <div className="space-y-2">
                 <Label>Order Date *</Label>
-                <DatePickerWithToday
+                <DatePicker
                   value={formData.order_date}
                   onChange={(v) => setFormData({ ...formData, order_date: v })}
                   required
@@ -263,7 +407,7 @@ export default function PurchaseOrderCreate() {
 
               <div className="space-y-2">
                 <Label>Expected Delivery</Label>
-                <DatePickerWithToday
+                <DatePicker
                   value={formData.expected_delivery_date}
                   onChange={(v) => setFormData({ ...formData, expected_delivery_date: v })}
                   placeholder="Select delivery date"
@@ -296,7 +440,7 @@ export default function PurchaseOrderCreate() {
               {formData.payment_method === 'credit' && (
                 <div className="space-y-2">
                   <Label>Payment Due Date</Label>
-                  <DatePickerWithToday
+                  <DatePicker
                     value={formData.payment_due_date}
                     onChange={(v) => setFormData({ ...formData, payment_due_date: v })}
                     placeholder="Select due date"
@@ -338,87 +482,163 @@ export default function PurchaseOrderCreate() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {items.map((item, index) => (
-              <div key={index} className="flex items-end gap-4">
-                <div className="flex-1 space-y-2">
-                  <Label>Product</Label>
-                  <div className="flex gap-2">
-                    <Select value={item.product_id} onValueChange={(v) => updateItem(index, 'product_id', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select product" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {products.map((p) => (
-                          <SelectItem key={p.id} value={p.id.toString()}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+          <CardContent className="space-y-6">
+            {items.map((item, index) => {
+              const selectedProduct = products.find(p => p.id.toString() === item.product_id);
+              const showBatchFields = selectedProduct?.track_batch || selectedProduct?.track_expiry;
+              
+              return (
+                <div key={index} className="border rounded-lg p-4 space-y-4 bg-muted/20">
+                  {/* Main Item Row */}
+                  <div className="flex items-end gap-4">
+                    <div className="flex-1 space-y-2">
+                      <Label>Product *</Label>
+                      <div className="flex gap-2">
+                        <Select value={item.product_id} onValueChange={(v) => updateItem(index, 'product_id', v)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select product" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map((p) => (
+                              <SelectItem key={p.id} value={p.id.toString()}>
+                                {p.name}
+                                {(p.track_batch || p.track_expiry) && (
+                                  <span className="ml-2 text-xs text-blue-600">
+                                    {p.track_batch && '📦'} {p.track_expiry && '📅'}
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleBarcodeClick(index)}
+                          title="Scan barcode"
+                        >
+                          <Scan className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {selectedProduct && (showBatchFields) && (
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          {selectedProduct.track_batch && 'Batch tracking enabled'}
+                          {selectedProduct.track_batch && selectedProduct.track_expiry && ' • '}
+                          {selectedProduct.track_expiry && 'Expiry tracking enabled'}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="w-24 space-y-2">
+                      <Label>Quantity *</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={item.quantity_ordered || ''}
+                        onChange={(e) => updateItem(index, 'quantity_ordered', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+
+                    <div className="w-28 space-y-2">
+                      <Label>Unit Type *</Label>
+                      <Select value={item.unit_type || 'piece'} onValueChange={(v) => updateItem(index, 'unit_type', v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="piece">Piece</SelectItem>
+                          <SelectItem value="carton">Carton</SelectItem>
+                          <SelectItem value="box">Box</SelectItem>
+                          <SelectItem value="pack">Pack</SelectItem>
+                          <SelectItem value="dozen">Dozen</SelectItem>
+                          <SelectItem value="kg">Kg</SelectItem>
+                          <SelectItem value="liter">Liter</SelectItem>
+                          <SelectItem value="meter">Meter</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="w-32 space-y-2">
+                      <Label>Unit Cost (₦) *</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.unit_cost || ''}
+                        onChange={(e) => updateItem(index, 'unit_cost', parseFloat(e.target.value) || 0)}
+                      />
+                    </div>
+
                     <Button
                       type="button"
-                      variant="outline"
+                      variant="ghost"
                       size="icon"
-                      onClick={() => handleBarcodeClick(index)}
-                      title="Scan barcode"
+                      onClick={() => removeItem(index)}
+                      disabled={items.length === 1}
+                      title="Remove item"
                     >
-                      <Scan className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
 
-                <div className="w-24 space-y-2">
-                  <Label>Quantity</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={item.quantity_ordered || ''}
-                    onChange={(e) => updateItem(index, 'quantity_ordered', parseInt(e.target.value) || 0)}
-                  />
-                </div>
+                  {/* Batch & Expiry Fields - Show when product has tracking enabled OR always show for flexibility */}
+                  <div className="grid grid-cols-3 gap-4 pt-3 border-t">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                        Batch Number {selectedProduct?.track_batch && <span className="text-red-500">*</span>}
+                      </Label>
+                      <Input
+                        type="text"
+                        placeholder={selectedProduct?.track_batch ? "Required" : "Optional"}
+                        value={item.batch_number || ''}
+                        onChange={(e) => updateItem(index, 'batch_number', e.target.value)}
+                        className={selectedProduct?.track_batch ? 'border-blue-300' : ''}
+                      />
+                      {selectedProduct?.track_batch && (
+                        <p className="text-xs text-muted-foreground">
+                          ⚠️ Required for this product
+                        </p>
+                      )}
+                    </div>
 
-                <div className="w-28 space-y-2">
-                  <Label>Unit Type</Label>
-                  <Select value={item.unit_type || 'piece'} onValueChange={(v) => updateItem(index, 'unit_type', v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="piece">Piece</SelectItem>
-                      <SelectItem value="carton">Carton</SelectItem>
-                      <SelectItem value="box">Box</SelectItem>
-                      <SelectItem value="pack">Pack</SelectItem>
-                      <SelectItem value="dozen">Dozen</SelectItem>
-                      <SelectItem value="kg">Kg</SelectItem>
-                      <SelectItem value="liter">Liter</SelectItem>
-                      <SelectItem value="meter">Meter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        Manufacturing Date (Optional)
+                      </Label>
+                      <MonthYearPicker
+                        value={item.manufacturing_date || ''}
+                        onChange={(v) => updateItem(index, 'manufacturing_date', v)}
+                        placeholder="Select month & year"
+                        maxDate={new Date()}
+                      />
+                    </div>
 
-                <div className="w-32 space-y-2">
-                  <Label>Unit Cost (₦)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.unit_cost || ''}
-                    onChange={(e) => updateItem(index, 'unit_cost', parseFloat(e.target.value) || 0)}
-                  />
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-orange-500" />
+                        Expiry Date {selectedProduct?.track_expiry && <span className="text-red-500">*</span>}
+                      </Label>
+                      <MonthYearPicker
+                        value={item.expiry_date || ''}
+                        onChange={(v) => updateItem(index, 'expiry_date', v)}
+                        placeholder={selectedProduct?.track_expiry ? "Required" : "Optional"}
+                        minDate={new Date()}
+                        className={selectedProduct?.track_expiry ? 'border-orange-300' : ''}
+                      />
+                      {selectedProduct?.track_expiry && (
+                        <p className="text-xs text-muted-foreground">
+                          ⚠️ Required for this product
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(index)}
-                  disabled={items.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="pt-4 border-t">
               <div className="flex justify-between text-lg font-semibold">

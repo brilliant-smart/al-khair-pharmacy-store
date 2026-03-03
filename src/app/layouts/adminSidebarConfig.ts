@@ -28,6 +28,11 @@ export const sidebarItems: SidebarItem[] = [
     roles: ["master_admin", "section_head"],
   },
   {
+    label: "Batch Tracking",
+    path: "/admin/batches",
+    roles: ["master_admin", "section_head"],
+  },
+  {
     label: "Sales",
     path: "/admin/sales",
     roles: ["master_admin", "section_head"],
@@ -55,6 +60,16 @@ export const sidebarItems: SidebarItem[] = [
   {
     label: "Users",
     path: "/admin/users",
+    roles: ["master_admin"],
+  },
+  {
+    label: "Backup & Restore",
+    path: "/admin/system/backups",
+    roles: ["master_admin", "section_head"], // All users can backup
+  },
+  {
+    label: "Audit Logs",
+    path: "/admin/system/audit-logs",
     roles: ["master_admin"],
   },
 ];

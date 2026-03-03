@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap");
+@import 'react-datepicker/dist/react-datepicker.css';
 
 @tailwind base;
 @tailwind components;
@@ -71,42 +72,43 @@
   }
 
   .dark {
-    --background: 150 10% 8%;
-    --foreground: 150 20% 95%;
+    /* Dark mode with better contrast for readability */
+    --background: 150 8% 12%; /* Slightly lighter dark background */
+    --foreground: 150 10% 98%; /* Brighter text for better readability */
 
-    --card: 150 15% 12%;
-    --card-foreground: 150 20% 95%;
+    --card: 150 10% 16%; /* Lighter cards */
+    --card-foreground: 150 8% 96%; /* Bright text on cards */
 
-    --popover: 150 15% 10%;
-    --popover-foreground: 150 20% 95%;
+    --popover: 150 10% 14%;
+    --popover-foreground: 150 8% 96%;
 
-    --primary: 150 52% 45%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 150 52% 55%; /* Brighter primary for dark mode */
+    --primary-foreground: 150 10% 10%; /* Dark text on bright primary */
 
-    --secondary: 150 40% 20%;
-    --secondary-foreground: 150 20% 95%;
+    --secondary: 150 40% 30%; /* Lighter secondary */
+    --secondary-foreground: 150 8% 96%;
 
-    --muted: 150 15% 15%;
-    --muted-foreground: 150 10% 60%;
+    --muted: 150 10% 20%; /* Lighter muted areas */
+    --muted-foreground: 150 8% 70%; /* Brighter muted text */
 
-    --accent: 150 52% 45%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 150 52% 55%;
+    --accent-foreground: 150 10% 10%;
 
-    --destructive: 0 62% 40%;
+    --destructive: 0 70% 50%; /* Brighter red for visibility */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 10% 20%;
-    --input: 150 10% 20%;
-    --ring: 150 52% 45%;
+    --border: 150 8% 25%; /* Lighter borders */
+    --input: 150 8% 22%; /* Lighter inputs */
+    --ring: 150 52% 55%;
 
-    --sidebar-background: 150 15% 10%;
-    --sidebar-foreground: 150 20% 95%;
-    --sidebar-primary: 150 52% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 150 15% 15%;
-    --sidebar-accent-foreground: 150 20% 95%;
-    --sidebar-border: 150 10% 20%;
-    --sidebar-ring: 150 52% 45%;
+    --sidebar-background: 150 10% 14%;
+    --sidebar-foreground: 150 8% 96%;
+    --sidebar-primary: 150 52% 55%;
+    --sidebar-primary-foreground: 150 10% 10%;
+    --sidebar-accent: 150 10% 20%;
+    --sidebar-accent-foreground: 150 8% 96%;
+    --sidebar-border: 150 8% 25%;
+    --sidebar-ring: 150 52% 55%;
   }
 
   .dark.theme-auth {
@@ -205,4 +207,66 @@
       transform: translateX(100%);
     }
   }
+}
+
+/* React DatePicker Custom Styling */
+.react-datepicker-wrapper {
+  width: 100%;
+}
+
+.react-datepicker__input-container {
+  width: 100%;
+}
+
+.react-datepicker {
+  font-family: "DM Sans", sans-serif;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.react-datepicker__header {
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  color: hsl(var(--foreground));
+}
+
+.react-datepicker__day:hover {
+  background-color: hsl(var(--accent));
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.react-datepicker__day--selected:hover {
+  background-color: hsl(var(--primary));
+}
+
+.react-datepicker__today-button {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-top: 1px solid hsl(var(--border));
+  padding: 0.5rem;
+  font-weight: 500;
+}
+
+.react-datepicker__today-button:hover {
+  background-color: hsl(var(--primary));
+  opacity: 0.9;
 }

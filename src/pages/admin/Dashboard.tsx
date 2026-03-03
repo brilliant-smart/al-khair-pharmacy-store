@@ -16,7 +16,12 @@ import {
   UserPlus,
   PackagePlus,
   ShieldCheck,
-  UserCog
+  UserCog,
+  AlertCircle,
+  FileText,
+  DollarSign,
+  AlertTriangle,
+  Clock
 } from "lucide-react";
 import {
   PieChart,
@@ -103,6 +108,10 @@ export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState(30);
+  const [pendingPOs, setPendingPOs] = useState<any[]>([]);
+  const [unpaidPOs, setUnpaidPOs] = useState<any[]>([]);
+  const [lowStockAlerts, setLowStockAlerts] = useState<any[]>([]);
+  const [expiryAlerts, setExpiryAlerts] = useState<any[]>([]);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -119,8 +128,44 @@ export default function Dashboard() {
       });
   };
 
+  const loadPOAlerts = async () => {
+    try {
+      // Load pending POs for approval (Master Admin only)
+      if (user?.role === 'master_admin') {
+        const pendingResponse = await api.get('/purchase-orders', {
+          params: { status: 'pending', per_page: 5 }
+        });
+        setPendingPOs(pendingResponse.data.data || []);
+      }
+
+      // Load unpaid/partially paid POs
+      const unpaidResponse = await api.get('/purchase-orders', {
+        params: { per_page: 100 }
+      });
+      const allPOs = unpaidResponse.data.data || [];
+      const needsPayment = allPOs.filter((po: any) => 
+        ['approved', 'received'].includes(po.status) && 
+        ['unpaid', 'partially_paid'].includes(po.payment_status)
+      );
+      setUnpaidPOs(needsPayment.slice(0, 5));
+
+      // Load low stock alerts
+      const lowStockResponse = await api.get('/alerts/low-stock');
+      setLowStockAlerts((lowStockResponse.data.alerts || []).slice(0, 5));
+
+      // Load expiring batches
+      const expiryResponse = await api.get('/alerts/expiring-batches', {
+        params: { days: 90 }
+      });
+      setExpiryAlerts((expiryResponse.data.alerts || []).slice(0, 5));
+    } catch (error) {
+      console.error('Failed to load alerts:', error);
+    }
+  };
+
   useEffect(() => {
     loadStats(dateRange);
+    loadPOAlerts();
   }, [dateRange]);
 
   const handleDateRangeChange = (days: number) => {
@@ -170,6 +215,203 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* PO Alerts */}
+      {isMasterAdmin && pendingPOs.length > 0 && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-orange-600" />
+                <CardTitle className="text-orange-900">
+                  {pendingPOs.length} Purchase Order{pendingPOs.length > 1 ? 's' : ''} Awaiting Approval
+                </CardTitle>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate('/admin/purchase-orders')}
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {pendingPOs.map((po) => (
+                <div 
+                  key={po.id} 
+                  className="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-orange-100"
+                  onClick={() => navigate(`/admin/purchase-orders/${po.id}`)}
+                >
+                  <div>
+                    <p className="font-medium">{po.po_number}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {po.supplier?.name} - ₦{po.total_amount?.toLocaleString()}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                    Pending
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {unpaidPOs.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-blue-900">
+                  {unpaidPOs.length} Purchase Order{unpaidPOs.length > 1 ? 's' : ''} with Pending Payment
+                </CardTitle>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate('/admin/purchase-orders')}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {unpaidPOs.map((po) => (
+                <div 
+                  key={po.id} 
+                  className="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-blue-100"
+                  onClick={() => navigate(`/admin/purchase-orders/${po.id}`)}
+                >
+                  <div>
+                    <p className="font-medium">{po.po_number}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Balance: ₦{((po.total_amount || 0) - (po.amount_paid || 0)).toLocaleString()}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {po.payment_status === 'unpaid' ? 'Unpaid' : 'Partially Paid'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Low Stock Alerts */}
+      {lowStockAlerts.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-600" />
+                <CardTitle className="text-red-900">
+                  {lowStockAlerts.length} Product{lowStockAlerts.length > 1 ? 's' : ''} Low on Stock
+                </CardTitle>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate('/admin/products')}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                View Products
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {lowStockAlerts.map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-red-100"
+                  onClick={() => navigate('/admin/products')}
+                >
+                  <div>
+                    <p className="font-medium">{alert.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Stock: {alert.stock_quantity} (Reorder at: {alert.reorder_level})
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className={
+                      alert.severity === 'critical' 
+                        ? 'bg-red-600 text-white' 
+                        : alert.severity === 'high'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }
+                  >
+                    {alert.stock_quantity === 0 ? 'Out of Stock' : 'Low Stock'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Expiry Alerts */}
+      {expiryAlerts.length > 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <CardTitle className="text-yellow-900">
+                  {expiryAlerts.length} Batch{expiryAlerts.length > 1 ? 'es' : ''} Expiring Soon
+                </CardTitle>
+              </div>
+              <Button 
+                size="sm" 
+                onClick={() => navigate('/admin/batches')}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                View Batches
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {expiryAlerts.map((alert) => (
+                <div 
+                  key={alert.id} 
+                  className="flex items-center justify-between p-2 bg-white rounded cursor-pointer hover:bg-yellow-100"
+                  onClick={() => navigate('/admin/batches')}
+                >
+                  <div>
+                    <p className="font-medium">{alert.product_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Batch: {alert.batch_number} • Qty: {alert.quantity_remaining} • Expires in {alert.days_until_expiry} days
+                    </p>
+                  </div>
+                  <Badge 
+                    variant="secondary" 
+                    className={
+                      alert.severity === 'critical' 
+                        ? 'bg-red-600 text-white' 
+                        : alert.severity === 'high'
+                        ? 'bg-yellow-600 text-white'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }
+                  >
+                    {alert.days_until_expiry <= 30 ? 'Urgent' : 'Soon'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Date Range Filter */}
       <div className="flex items-center gap-2">

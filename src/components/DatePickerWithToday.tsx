@@ -13,6 +13,8 @@ interface DatePickerWithTodayProps {
   disabled?: boolean;
   required?: boolean;
   className?: string;
+  minDate?: Date;
+  maxDate?: Date;
 }
 
 export function DatePickerWithToday({ 
@@ -21,7 +23,9 @@ export function DatePickerWithToday({
   placeholder = "Pick a date",
   disabled = false,
   required = false,
-  className 
+  className,
+  minDate,
+  maxDate
 }: DatePickerWithTodayProps) {
   const [open, setOpen] = useState(false);
 
@@ -39,6 +43,11 @@ export function DatePickerWithToday({
     onChange(format(today, 'yyyy-MM-dd'));
     setOpen(false);
   };
+
+  // Calculate year range for dropdown (current year ± 10 years for past, +50 for future)
+  const currentYear = new Date().getFullYear();
+  const fromYear = minDate ? minDate.getFullYear() : currentYear - 10;
+  const toYear = maxDate ? maxDate.getFullYear() : currentYear + 50;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -73,6 +82,14 @@ export function DatePickerWithToday({
           onSelect={handleSelect}
           initialFocus
           required={required}
+          disabled={minDate || maxDate ? (date) => {
+            if (minDate && date < minDate) return true;
+            if (maxDate && date > maxDate) return true;
+            return false;
+          } : undefined}
+          captionLayout="dropdown-buttons"
+          fromYear={fromYear}
+          toYear={toYear}
         />
       </PopoverContent>
     </Popover>

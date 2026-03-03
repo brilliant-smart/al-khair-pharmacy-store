@@ -17,25 +17,31 @@ import {
   AlertTriangle 
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { DatePicker } from '@/components/DatePicker';
 import { api } from '@/app/lib/api';
 import { toast } from 'sonner';
-import { DatePickerWithToday } from '@/components/DatePickerWithToday';
 
 interface PriceHistoryRecord {
   id: number;
   product_id: number;
   product_name: string;
   product_sku: string;
-  old_price: number;
-  new_price: number;
-  price_change: number;
-  percentage_change: number;
+  old_price: number | string;
+  new_price: number | string;
+  price_change: number | string;
+  percentage_change: number | string;
   change_type: string;
   supplier_name: string;
   reference_number: string;
   changed_at: string;
   notes: string;
 }
+
+// Helper function to convert string/number to number
+const toNumber = (value: number | string | null | undefined): number => {
+  if (value === null || value === undefined) return 0;
+  return typeof value === 'string' ? parseFloat(value) : value;
+};
 
 export default function PriceHistoryDashboard() {
   const [loading, setLoading] = useState(false);
@@ -81,23 +87,23 @@ export default function PriceHistoryDashboard() {
   };
 
   const calculateStats = (data: PriceHistoryRecord[]) => {
-    const increases = data.filter(h => h.price_change > 0);
-    const decreases = data.filter(h => h.price_change < 0);
+    const increases = data.filter(h => toNumber(h.price_change) > 0);
+    const decreases = data.filter(h => toNumber(h.price_change) < 0);
 
     const avgIncrease = increases.length > 0
-      ? increases.reduce((sum, h) => sum + h.price_change, 0) / increases.length
+      ? increases.reduce((sum, h) => sum + toNumber(h.price_change), 0) / increases.length
       : 0;
 
     const avgDecrease = decreases.length > 0
-      ? Math.abs(decreases.reduce((sum, h) => sum + h.price_change, 0) / decreases.length)
+      ? Math.abs(decreases.reduce((sum, h) => sum + toNumber(h.price_change), 0) / decreases.length)
       : 0;
 
     const largestIncrease = increases.length > 0
-      ? Math.max(...increases.map(h => h.price_change))
+      ? Math.max(...increases.map(h => toNumber(h.price_change)))
       : 0;
 
     const largestDecrease = decreases.length > 0
-      ? Math.abs(Math.min(...decreases.map(h => h.price_change)))
+      ? Math.abs(Math.min(...decreases.map(h => toNumber(h.price_change))))
       : 0;
 
     setStats({
@@ -130,9 +136,9 @@ export default function PriceHistoryDashboard() {
 
     // Trend filter
     if (trendFilter === 'increase') {
-      filtered = filtered.filter(h => h.price_change > 0);
+      filtered = filtered.filter(h => toNumber(h.price_change) > 0);
     } else if (trendFilter === 'decrease') {
-      filtered = filtered.filter(h => h.price_change < 0);
+      filtered = filtered.filter(h => toNumber(h.price_change) < 0);
     }
 
     // Date range filter
@@ -146,16 +152,19 @@ export default function PriceHistoryDashboard() {
     setFilteredHistory(filtered);
   };
 
-  const getPriceChangeBadge = (change: number, percentChange: number) => {
-    if (Math.abs(change) < 0.01) {
+  const getPriceChangeBadge = (change: number | string, percentChange: number | string) => {
+    const changeNum = toNumber(change);
+    const percentNum = toNumber(percentChange);
+    
+    if (Math.abs(changeNum) < 0.01) {
       return <Badge variant="outline">No Change</Badge>;
     }
 
-    if (change > 0) {
+    if (changeNum > 0) {
       return (
         <Badge variant="destructive" className="flex items-center gap-1 w-fit">
           <TrendingUp className="h-3 w-3" />
-          +₦{change.toFixed(2)} (+{Math.abs(percentChange).toFixed(2)}%)
+          +₦{changeNum.toFixed(2)} (+{Math.abs(percentNum).toFixed(2)}%)
         </Badge>
       );
     }
@@ -163,7 +172,7 @@ export default function PriceHistoryDashboard() {
     return (
       <Badge variant="default" className="bg-green-600 flex items-center gap-1 w-fit">
         <TrendingDown className="h-3 w-3" />
-        -₦{Math.abs(change).toFixed(2)} ({Math.abs(percentChange).toFixed(2)}%)
+        -₦{Math.abs(changeNum).toFixed(2)} ({Math.abs(percentNum).toFixed(2)}%)
       </Badge>
     );
   };
@@ -174,10 +183,10 @@ export default function PriceHistoryDashboard() {
       format(new Date(h.changed_at), 'yyyy-MM-dd HH:mm'),
       h.product_name,
       h.product_sku,
-      h.old_price.toFixed(2),
-      h.new_price.toFixed(2),
-      h.price_change.toFixed(2),
-      h.percentage_change.toFixed(2),
+      toNumber(h.old_price).toFixed(2),
+      toNumber(h.new_price).toFixed(2),
+      toNumber(h.price_change).toFixed(2),
+      toNumber(h.percentage_change).toFixed(2),
       h.supplier_name || 'N/A',
       h.reference_number || 'N/A',
     ]);
@@ -309,17 +318,17 @@ export default function PriceHistoryDashboard() {
 
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <DatePickerWithToday
-                date={startDate}
-                onDateChange={setStartDate}
+              <DatePicker
+                value={startDate ? format(startDate, 'yyyy-MM-dd') : ''}
+                onChange={(v) => setStartDate(v ? new Date(v) : null)}
               />
             </div>
 
             <div className="space-y-2">
               <Label>End Date</Label>
-              <DatePickerWithToday
-                date={endDate}
-                onDateChange={setEndDate}
+              <DatePicker
+                value={endDate ? format(endDate, 'yyyy-MM-dd') : ''}
+                onChange={(v) => setEndDate(v ? new Date(v) : null)}
               />
             </div>
           </div>
@@ -383,8 +392,8 @@ export default function PriceHistoryDashboard() {
                           <p className="text-xs text-muted-foreground">{record.product_sku}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="font-semibold">₦{record.old_price?.toFixed(2) || '0.00'}</TableCell>
-                      <TableCell className="font-semibold">₦{record.new_price.toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold">₦{toNumber(record.old_price).toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold">₦{toNumber(record.new_price).toFixed(2)}</TableCell>
                       <TableCell>
                         {getPriceChangeBadge(record.price_change, record.percentage_change)}
                       </TableCell>

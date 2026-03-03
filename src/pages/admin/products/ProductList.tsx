@@ -41,13 +41,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Pencil, Trash2, Plus, Loader2, Search, Filter, Star, ArrowUpDown, CheckSquare, Square, Download, Package, History, Scan } from "lucide-react";
+import { Pencil, Trash2, Plus, Loader2, Search, Filter, Star, ArrowUpDown, CheckSquare, Square, Download, Package, History, Scan, Calendar, AlertTriangle } from "lucide-react";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { createProduct, updateProduct } from "@/app/api/products";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StockBadge } from "@/components/StockBadge";
 import { StockAdjustmentModal } from "@/components/StockAdjustmentModal";
 import { StockHistoryModal } from "@/components/StockHistoryModal";
+import { MonthYearPicker } from '@/components/MonthYearPicker';
+import { Switch } from "@/components/ui/switch";
 
 interface Product {
   id: number;
@@ -64,6 +66,11 @@ interface Product {
   department_id: number;
   is_active: boolean;
   is_featured: boolean;
+  track_batch?: boolean;
+  track_expiry?: boolean;
+  batch_number?: string | null;
+  expiry_date?: string | null;
+  manufacturing_date?: string | null;
   department: {
     id: number;
     name: string;
@@ -118,6 +125,11 @@ export default function ProductList() {
     price: "",
     department_id: "",
     is_active: true,
+    track_batch: false,
+    track_expiry: false,
+    batch_number: "",
+    expiry_date: "",
+    manufacturing_date: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -288,6 +300,11 @@ export default function ProductList() {
       price: "",
       department_id: user?.role === "section_head" ? String(user.department_id) : "",
       is_active: true,
+      track_batch: false,
+      track_expiry: false,
+      batch_number: "",
+      expiry_date: "",
+      manufacturing_date: "",
     });
     setImageFile(null);
     setFormDialogOpen(true);
@@ -304,6 +321,11 @@ export default function ProductList() {
       price: String(product.price),
       department_id: String(product.department_id),
       is_active: product.is_active,
+      track_batch: (product as any).track_batch || false,
+      track_expiry: (product as any).track_expiry || false,
+      batch_number: (product as any).batch_number || "",
+      expiry_date: (product as any).expiry_date || "",
+      manufacturing_date: (product as any).manufacturing_date || "",
     });
     setImageFile(null);
     setFormDialogOpen(true);
@@ -361,6 +383,17 @@ export default function ProductList() {
       formDataToSend.append("price", formData.price);
       formDataToSend.append("department_id", formData.department_id);
       formDataToSend.append("is_active", formData.is_active ? "1" : "0");
+      
+      // WORLD-CLASS: Batch and expiry tracking
+      formDataToSend.append("track_batch", formData.track_batch ? "1" : "0");
+      formDataToSend.append("track_expiry", formData.track_expiry ? "1" : "0");
+      
+      // Only include batch/expiry data if editing and values are provided
+      if (editingProduct) {
+        if (formData.batch_number) formDataToSend.append("batch_number", formData.batch_number.trim());
+        if (formData.expiry_date) formDataToSend.append("expiry_date", formData.expiry_date);
+        if (formData.manufacturing_date) formDataToSend.append("manufacturing_date", formData.manufacturing_date);
+      }
       
       if (imageFile) {
         formDataToSend.append("image", imageFile);
@@ -1129,6 +1162,107 @@ export default function ProductList() {
                   alt="Current"
                   className="mt-2 h-24 w-24 object-cover rounded border"
                 />
+              )}
+            </div>
+
+            {/* WORLD-CLASS: Batch & Expiry Tracking Section */}
+            <div className="border rounded-lg p-4 bg-blue-50/50 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Package className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-sm">Batch & Expiry Tracking</h3>
+                <AlertTriangle className="h-4 w-4 text-orange-500 ml-auto" title="Enable for products that require batch/expiry tracking" />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <Label htmlFor="track_batch" className="cursor-pointer font-medium">
+                        Track Batches
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable batch number tracking
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="track_batch"
+                    checked={formData.track_batch}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, track_batch: checked })
+                    }
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 border rounded-lg bg-white">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-orange-500" />
+                    <div>
+                      <Label htmlFor="track_expiry" className="cursor-pointer font-medium">
+                        Track Expiry
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        Enable expiry date tracking
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="track_expiry"
+                    checked={formData.track_expiry}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, track_expiry: checked })
+                    }
+                  />
+                </div>
+              </div>
+
+
+              {/* Show batch/expiry fields when editing if product has existing data */}
+              {editingProduct && (formData.track_batch || formData.track_expiry || formData.batch_number || formData.expiry_date) && (
+                <div className="space-y-3 pt-3 border-t">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Current Batch Information (if any)</p>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    {(formData.track_batch || formData.batch_number) && (
+                      <div>
+                        <Label htmlFor="batch_number" className="text-xs">Batch Number</Label>
+                        <Input
+                          id="batch_number"
+                          value={formData.batch_number}
+                          onChange={(e) => setFormData({ ...formData, batch_number: e.target.value })}
+                          placeholder="Optional"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    )}
+
+                    {formData.manufacturing_date && (
+                      <div>
+                        <Label htmlFor="manufacturing_date" className="text-xs">Mfg. Date</Label>
+                        <MonthYearPicker
+                          value={formData.manufacturing_date}
+                          onChange={(v) => setFormData({ ...formData, manufacturing_date: v })}
+                          placeholder="Optional"
+                          maxDate={new Date()}
+                        />
+                      </div>
+                    )}
+
+                    {(formData.track_expiry || formData.expiry_date) && (
+                      <div>
+                        <Label htmlFor="expiry_date" className="text-xs">Expiry Date</Label>
+                        <MonthYearPicker
+                          value={formData.expiry_date}
+                          onChange={(v) => setFormData({ ...formData, expiry_date: v })}
+                          placeholder="Optional"
+                          minDate={new Date()}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                </div>
               )}
             </div>
 

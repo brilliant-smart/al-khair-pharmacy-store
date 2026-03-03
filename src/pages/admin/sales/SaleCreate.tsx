@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Scan } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,8 +12,9 @@ import { salesApi } from '@/app/api/sales';
 import { productApi } from '@/app/api/products';
 import { toast } from 'sonner';
 import BarcodeScanner from '@/components/BarcodeScanner';
-import { DatePickerWithToday } from '@/components/DatePickerWithToday';
 import { useAuth } from '@/app/auth/AuthContext';
+import { DatePicker } from '@/components/DatePicker';
+import { createBarcodeScanner } from '@/utils/barcodeScanner';
 
 export default function SaleCreate() {
   const navigate = useNavigate();
@@ -33,10 +34,63 @@ export default function SaleCreate() {
   ]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanningForIndex, setScanningForIndex] = useState<number | null>(null);
+  const [externalScannerEnabled, setExternalScannerEnabled] = useState(false);
+  const externalScannerRef = useRef<any>(null);
 
   useEffect(() => {
     loadProducts();
   }, []);
+
+  // External barcode scanner support
+  useEffect(() => {
+    if (externalScannerEnabled && !externalScannerRef.current) {
+      externalScannerRef.current = createBarcodeScanner({
+        onScan: async (barcode) => {
+          try {
+            const product = await productApi.searchByBarcode(barcode);
+            
+            // Find first empty row or add new row
+            const emptyIndex = items.findIndex(item => !item.product_id);
+            if (emptyIndex !== -1) {
+              updateItem(emptyIndex, 'product_id', product.id.toString());
+              if (product.price) {
+                updateItem(emptyIndex, 'unit_price', product.price);
+              }
+            } else {
+              // Add new item
+              setItems([...items, {
+                product_id: product.id.toString(),
+                quantity: 1,
+                unit_price: product.price || 0,
+                unit_type: product.unit_type || 'piece'
+              }]);
+            }
+            
+            toast.success(`Added: ${product.name}`);
+          } catch (error: any) {
+            toast.error(error.response?.data?.message || 'Product not found');
+          }
+        },
+        minLength: 3,
+        maxLength: 50,
+        preventDefault: true,
+        ignoreIfFocusOn: ['input[type="text"]', 'input[type="number"]', 'textarea', 'select'],
+      });
+      
+      externalScannerRef.current.start();
+      toast.info('External barcode scanner enabled');
+    } else if (!externalScannerEnabled && externalScannerRef.current) {
+      externalScannerRef.current.stop();
+      externalScannerRef.current = null;
+      toast.info('External barcode scanner disabled');
+    }
+
+    return () => {
+      if (externalScannerRef.current) {
+        externalScannerRef.current.stop();
+      }
+    };
+  }, [externalScannerEnabled, items]);
 
   const loadProducts = async () => {
     try {
@@ -144,13 +198,28 @@ export default function SaleCreate() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/admin/sales')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold">Record Sale</h1>
-          <p className="text-muted-foreground">Create a new sales transaction</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/admin/sales')}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Record Sale</h1>
+            <p className="text-muted-foreground">Create a new sales transaction</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Label htmlFor="external-scanner" className="cursor-pointer text-sm font-medium">
+            External Scanner (EVAWGIB/POS Maid)
+          </Label>
+          <input
+            id="external-scanner"
+            type="checkbox"
+            checked={externalScannerEnabled}
+            onChange={(e) => setExternalScannerEnabled(e.target.checked)}
+            className="h-4 w-4 cursor-pointer"
+          />
         </div>
       </div>
 
@@ -163,7 +232,7 @@ export default function SaleCreate() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Sale Date *</Label>
-                <DatePickerWithToday
+                <DatePicker
                   value={formData.sale_date}
                   onChange={(v) => setFormData({ ...formData, sale_date: v })}
                   required

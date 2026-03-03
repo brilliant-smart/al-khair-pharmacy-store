@@ -22,11 +22,14 @@ import PurchaseOrderList from "@/pages/admin/purchase-orders/PurchaseOrderList";
 import PurchaseOrderCreate from "@/pages/admin/purchase-orders/PurchaseOrderCreate";
 import PurchaseOrderEdit from "@/pages/admin/purchase-orders/PurchaseOrderEdit";
 import PurchaseOrderDetail from "@/pages/admin/purchase-orders/PurchaseOrderDetail";
+import BatchList from "@/pages/admin/batches/BatchList";
 import SalesList from "@/pages/admin/sales/SalesList";
 import SaleCreate from "@/pages/admin/sales/SaleCreate";
 import FinancialReports from "@/pages/admin/reports/FinancialReports";
 import PriceHistoryDashboard from "@/pages/admin/reports/PriceHistoryDashboard";
 import SupplierPriceComparison from "@/pages/admin/reports/SupplierPriceComparison";
+import BackupRestore from "@/pages/admin/system/BackupRestore";
+import AuditLogs from "@/pages/admin/system/AuditLogs";
 
 import RoleProtectedRoute from "./RoleProtectedRoute";
 
@@ -178,6 +181,18 @@ export default function AdminRoutes() {
             }
           />
 
+          {/* Batch Tracking Routes */}
+          <Route
+            path="batches"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <BatchList />
+              </RoleProtectedRoute>
+            }
+          />
+
           {/* Sales Routes */}
           <Route
             path="sales"
@@ -246,6 +261,19 @@ export default function AdminRoutes() {
 
           {/* Profile Route */}
           <Route path="profile" element={<Profile />} />
+
+          {/* Backup & Restore (All Users - Restore restricted in component) */}
+          <Route path="system/backups" element={<BackupRestore />} />
+
+          {/* Audit Logs (Master Admin Only) */}
+          <Route
+            path="system/audit-logs"
+            element={
+              <RoleProtectedRoute allowedRoles={["master_admin"]}>
+                <AuditLogs />
+              </RoleProtectedRoute>
+            }
+          />
         </Routes>
       </AdminLayout>
     </ProtectedRoute>

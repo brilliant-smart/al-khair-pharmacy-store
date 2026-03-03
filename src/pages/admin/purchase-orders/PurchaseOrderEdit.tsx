@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { purchaseOrderApi } from '@/app/api/purchaseOrders';
 import { supplierApi } from '@/app/api/suppliers';
 import { toast } from 'sonner';
-import { DatePickerWithToday } from '@/components/DatePickerWithToday';
+import { DatePicker } from '@/components/DatePicker';
 
 export default function PurchaseOrderEdit() {
   const { id } = useParams();
@@ -128,7 +128,7 @@ export default function PurchaseOrderEdit() {
 
               <div className="space-y-2">
                 <Label>Expected Delivery Date</Label>
-                <DatePickerWithToday
+                <DatePicker
                   value={formData.expected_delivery_date}
                   onChange={(v) => setFormData({ ...formData, expected_delivery_date: v })}
                   placeholder="Select delivery date"
