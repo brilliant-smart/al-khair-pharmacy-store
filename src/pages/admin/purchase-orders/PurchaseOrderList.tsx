@@ -178,13 +178,13 @@ export default function PurchaseOrderList() {
 
       {loading ? (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <p className="text-center text-muted-foreground">Loading purchase orders...</p>
           </CardContent>
         </Card>
       ) : orders.length === 0 ? (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <p className="text-center text-muted-foreground">No purchase orders yet. Create your first one!</p>
           </CardContent>
         </Card>
@@ -196,7 +196,7 @@ export default function PurchaseOrderList() {
             return (
               <Link key={order.id} to={`/admin/purchase-orders/${order.id}`}>
                 <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 md:p-6">
                     <div className="space-y-4">
                       {/* Header Row */}
                       <div className="flex items-start justify-between">

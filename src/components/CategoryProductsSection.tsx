@@ -97,10 +97,13 @@ export function CategoryProductsSection({
         name: product.name,
         price: product.price ? `₦${product.price.toLocaleString()}` : "₦0",
         rating: 4.8,
-        image: product.image_full_url || product.image_url || PLACEHOLDER_IMAGE,
+        image: product.image_full_url || product.image_url || product.image || PLACEHOLDER_IMAGE,
         badge: product.is_featured ? "Featured" : null,
         slug: product.slug,
       }));
+      
+      console.log('📦 Loaded products for View All:', transformed.length);
+      console.log('📸 Sample product:', transformed[0]);
       
       setAllProducts(transformed);
     } catch (error) {
@@ -130,7 +133,7 @@ export function CategoryProductsSection({
   const handleViewProduct = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
     e.stopPropagation();
-    if (product.slug) return; // navigation handled by Link
+    // Always open modal for image preview, regardless of slug
     setSelectedProduct(product);
   };
 
@@ -197,30 +200,43 @@ export function CategoryProductsSection({
           </motion.div>
 
           {/* Product grid */}
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
-          >
-            {displayProducts.map((product) => {
-              const CardWrapper = product.slug ? Link : "div";
-              const cardProps = product.slug
-                ? { to: `/products/${product.slug}` }
-                : {};
-              return (
-                <motion.div key={product.id} variants={itemVariants}>
-                  <CardWrapper
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isExpanded ? 'expanded' : 'collapsed'}
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+            >
+              {displayProducts.length === 0 && isExpanded && !loadingAll && (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-muted-foreground">No products found in this category.</p>
+                </div>
+              )}
+              {displayProducts.map((product) => {
+                const CardWrapper = product.slug ? Link : "div";
+                const cardProps = product.slug
+                  ? { to: `/products/${product.slug}` }
+                  : {};
+                return (
+                  <motion.div key={product.id} variants={itemVariants}>
+                    <CardWrapper
                     {...cardProps}
                     className="group bg-background rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-elegant transition-all duration-500 block"
                   >
                     {/* Image container */}
-                    <div className="relative aspect-square overflow-hidden bg-muted">
+                    <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center">
                       <img
                         src={product.image || PLACEHOLDER_IMAGE}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          if (target.src !== PLACEHOLDER_IMAGE) {
+                            target.src = PLACEHOLDER_IMAGE;
+                          }
+                        }}
                       />
 
                       {/* Badge */}
@@ -277,7 +293,8 @@ export function CategoryProductsSection({
                 </motion.div>
               );
             })}
-          </motion.div>
+            </motion.div>
+          </AnimatePresence>
 
         </div>
       </section>

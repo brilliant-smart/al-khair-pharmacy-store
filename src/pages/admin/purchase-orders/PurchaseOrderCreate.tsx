@@ -51,7 +51,6 @@ export default function PurchaseOrderCreate() {
   ]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanningForIndex, setScanningForIndex] = useState<number | null>(null);
-  const [externalScannerEnabled, setExternalScannerEnabled] = useState(false);
   const externalScannerRef = useRef<any>(null);
 
   useEffect(() => {
@@ -59,9 +58,9 @@ export default function PurchaseOrderCreate() {
     loadProducts();
   }, []);
 
-  // External barcode scanner support for PO
+  // External barcode scanner support for PO - AUTO-DETECT enabled by default
   useEffect(() => {
-    if (externalScannerEnabled && !externalScannerRef.current) {
+    if (!externalScannerRef.current) {
       externalScannerRef.current = createBarcodeScanner({
         onScan: async (barcode) => {
           try {
@@ -70,15 +69,20 @@ export default function PurchaseOrderCreate() {
             // Find first empty row or add new row
             const emptyIndex = items.findIndex(item => !item.product_id);
             if (emptyIndex !== -1) {
-              updateItem(emptyIndex, 'product_id', product.id.toString());
-              if (product.cost_price) {
-                updateItem(emptyIndex, 'unit_cost', product.cost_price);
-              }
+              // Update the items state properly
+              const newItems = [...items];
+              newItems[emptyIndex] = {
+                ...newItems[emptyIndex],
+                product_id: product.id.toString(),
+                unit_cost: product.cost_price || 0,
+                unit_type: product.unit_type || 'piece',
+              };
+              setItems(newItems);
             } else {
               // Add new item
               setItems([...items, {
                 product_id: product.id.toString(),
-                quantity: 1,
+                quantity_ordered: 1,
                 unit_cost: product.cost_price || 0,
                 unit_type: product.unit_type || 'piece',
                 manufacturing_date: '',
@@ -99,11 +103,6 @@ export default function PurchaseOrderCreate() {
       });
       
       externalScannerRef.current.start();
-      toast.info('External barcode scanner enabled');
-    } else if (!externalScannerEnabled && externalScannerRef.current) {
-      externalScannerRef.current.stop();
-      externalScannerRef.current = null;
-      toast.info('External barcode scanner disabled');
     }
 
     return () => {
@@ -111,7 +110,7 @@ export default function PurchaseOrderCreate() {
         externalScannerRef.current.stop();
       }
     };
-  }, [externalScannerEnabled, items]);
+  }, [items, products]);
 
   const loadSuppliers = async () => {
     try {
@@ -338,17 +337,11 @@ export default function PurchaseOrderCreate() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Label htmlFor="external-scanner-po" className="cursor-pointer text-sm font-medium">
-            External Scanner (EVAWGIB/POS Maid)
+        <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+          <Label className="text-sm font-medium text-green-700">
+            External Scanner Active (Auto-Detect)
           </Label>
-          <input
-            id="external-scanner-po"
-            type="checkbox"
-            checked={externalScannerEnabled}
-            onChange={(e) => setExternalScannerEnabled(e.target.checked)}
-            className="h-4 w-4 cursor-pointer"
-          />
         </div>
       </div>
 
@@ -391,7 +384,7 @@ export default function PurchaseOrderCreate() {
                 </Select>
                 {formData.supplier_id && (
                   <p className="text-xs text-muted-foreground">
-                    💡 Payment method auto-filled from supplier's default (you can change it below)
+                    The payment method is prefilled from the supplier's default payment method
                   </p>
                 )}
               </div>

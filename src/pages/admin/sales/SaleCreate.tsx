@@ -34,16 +34,15 @@ export default function SaleCreate() {
   ]);
   const [showScanner, setShowScanner] = useState(false);
   const [scanningForIndex, setScanningForIndex] = useState<number | null>(null);
-  const [externalScannerEnabled, setExternalScannerEnabled] = useState(false);
   const externalScannerRef = useRef<any>(null);
 
   useEffect(() => {
     loadProducts();
   }, []);
 
-  // External barcode scanner support
+  // External barcode scanner support - AUTO-DETECT enabled by default
   useEffect(() => {
-    if (externalScannerEnabled && !externalScannerRef.current) {
+    if (!externalScannerRef.current) {
       externalScannerRef.current = createBarcodeScanner({
         onScan: async (barcode) => {
           try {
@@ -52,10 +51,15 @@ export default function SaleCreate() {
             // Find first empty row or add new row
             const emptyIndex = items.findIndex(item => !item.product_id);
             if (emptyIndex !== -1) {
-              updateItem(emptyIndex, 'product_id', product.id.toString());
-              if (product.price) {
-                updateItem(emptyIndex, 'unit_price', product.price);
-              }
+              // Update the items state properly
+              const newItems = [...items];
+              newItems[emptyIndex] = {
+                ...newItems[emptyIndex],
+                product_id: product.id.toString(),
+                unit_price: product.price || 0,
+                unit_type: product.unit_type || 'piece'
+              };
+              setItems(newItems);
             } else {
               // Add new item
               setItems([...items, {
@@ -78,11 +82,6 @@ export default function SaleCreate() {
       });
       
       externalScannerRef.current.start();
-      toast.info('External barcode scanner enabled');
-    } else if (!externalScannerEnabled && externalScannerRef.current) {
-      externalScannerRef.current.stop();
-      externalScannerRef.current = null;
-      toast.info('External barcode scanner disabled');
     }
 
     return () => {
@@ -90,7 +89,7 @@ export default function SaleCreate() {
         externalScannerRef.current.stop();
       }
     };
-  }, [externalScannerEnabled, items]);
+  }, [items, products]);
 
   const loadProducts = async () => {
     try {
@@ -209,17 +208,11 @@ export default function SaleCreate() {
           </div>
         </div>
         
-        <div className="flex items-center gap-2">
-          <Label htmlFor="external-scanner" className="cursor-pointer text-sm font-medium">
-            External Scanner (EVAWGIB/POS Maid)
+        <div className="flex items-center gap-2 bg-green-50 px-3 py-2 rounded-md border border-green-200">
+          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+          <Label className="text-sm font-medium text-green-700">
+            External Scanner Active (Auto-Detect)
           </Label>
-          <input
-            id="external-scanner"
-            type="checkbox"
-            checked={externalScannerEnabled}
-            onChange={(e) => setExternalScannerEnabled(e.target.checked)}
-            className="h-4 w-4 cursor-pointer"
-          />
         </div>
       </div>
 

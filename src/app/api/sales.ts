@@ -108,6 +108,24 @@ export const salesApi = {
     return response.data.data || response.data;
   },
 
+  // Get sales analytics
+  getAnalytics: async (
+    period: 'today' | 'yesterday' | 'this_week' | 'this_month' | 'custom' = 'this_month',
+    startDate?: string,
+    endDate?: string
+  ) => {
+    const params = new URLSearchParams();
+    params.append('period', period);
+    
+    if (period === 'custom' && startDate && endDate) {
+      params.append('start_date', startDate);
+      params.append('end_date', endDate);
+    }
+    
+    const response = await api.get(`/sales/analytics?${params.toString()}`);
+    return response.data;
+  },
+
   // Export sales
   export: async (startDate?: string, endDate?: string, format: 'pdf' | 'csv' = 'csv') => {
     const params = new URLSearchParams();

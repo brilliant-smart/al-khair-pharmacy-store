@@ -33,6 +33,16 @@ export const searchByBarcode = async (barcode: string) => {
   return response.data;
 };
 
+export const searchProducts = async (query: string) => {
+  const response = await api.get('/products', {
+    params: { 
+      search: query,
+      limit: 10
+    }
+  });
+  return response.data;
+};
+
 // Export as a single object for consistency with other API files
 export const productApi = {
   getAll: getProducts,
@@ -41,4 +51,5 @@ export const productApi = {
   update: updateProduct,
   delete: deleteProduct,
   searchByBarcode: searchByBarcode,
+  search: searchProducts,
 };

@@ -105,13 +105,13 @@ export default function SupplierList() {
 
       {loading ? (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <p className="text-center text-muted-foreground">Loading suppliers...</p>
           </CardContent>
         </Card>
       ) : filteredSuppliers.length === 0 ? (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 md:p-6">
             <p className="text-center text-muted-foreground">
               {search ? 'No suppliers found matching your search' : 'No suppliers yet. Create your first one!'}
             </p>

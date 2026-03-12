@@ -33,8 +33,18 @@ export const sidebarItems: SidebarItem[] = [
     roles: ["master_admin", "section_head"],
   },
   {
+    label: "POS Terminal",
+    path: "/admin/pos",
+    roles: ["master_admin", "section_head"],
+  },
+  {
     label: "Sales",
     path: "/admin/sales",
+    roles: ["master_admin", "section_head"],
+  },
+  {
+    label: "Expenses",
+    path: "/admin/expenses",
     roles: ["master_admin", "section_head"],
   },
   {

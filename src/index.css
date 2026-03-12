@@ -10,6 +10,21 @@
 */
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  body {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   :root {
     /* Al-Khair Green Palette */
     --background: 150 20% 98%; /* Warm white #FAFCFB */

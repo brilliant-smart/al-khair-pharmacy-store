@@ -25,11 +25,18 @@ import PurchaseOrderDetail from "@/pages/admin/purchase-orders/PurchaseOrderDeta
 import BatchList from "@/pages/admin/batches/BatchList";
 import SalesList from "@/pages/admin/sales/SalesList";
 import SaleCreate from "@/pages/admin/sales/SaleCreate";
+import SalesAnalytics from "@/pages/admin/sales/SalesAnalytics";
+import POSTerminal from "@/pages/admin/pos/POSTerminal";
 import FinancialReports from "@/pages/admin/reports/FinancialReports";
 import PriceHistoryDashboard from "@/pages/admin/reports/PriceHistoryDashboard";
 import SupplierPriceComparison from "@/pages/admin/reports/SupplierPriceComparison";
 import BackupRestore from "@/pages/admin/system/BackupRestore";
 import AuditLogs from "@/pages/admin/system/AuditLogs";
+
+import ExpenseList from "@/pages/admin/expenses/ExpenseList";
+import ExpenseCreate from "@/pages/admin/expenses/ExpenseCreate";
+import ExpenseEdit from "@/pages/admin/expenses/ExpenseEdit";
+import ExpenseAnalytics from "@/pages/admin/expenses/ExpenseAnalytics";
 
 import RoleProtectedRoute from "./RoleProtectedRoute";
 
@@ -193,6 +200,18 @@ export default function AdminRoutes() {
             }
           />
 
+          {/* POS Terminal */}
+          <Route
+            path="pos"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <POSTerminal />
+              </RoleProtectedRoute>
+            }
+          />
+
           {/* Sales Routes */}
           <Route
             path="sales"
@@ -211,6 +230,16 @@ export default function AdminRoutes() {
                 allowedRoles={["master_admin", "section_head"]}
               >
                 <SaleCreate />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="sales/analytics"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["master_admin", "section_head"]}
+              >
+                <SalesAnalytics />
               </RoleProtectedRoute>
             }
           />
@@ -274,6 +303,12 @@ export default function AdminRoutes() {
               </RoleProtectedRoute>
             }
           />
+
+          {/* Expenses Routes */}
+          <Route path="expenses" element={<ExpenseList />} />
+          <Route path="expenses/create" element={<ExpenseCreate />} />
+          <Route path="expenses/:id/edit" element={<ExpenseEdit />} />
+          <Route path="expenses/analytics" element={<ExpenseAnalytics />} />
         </Routes>
       </AdminLayout>
     </ProtectedRoute>

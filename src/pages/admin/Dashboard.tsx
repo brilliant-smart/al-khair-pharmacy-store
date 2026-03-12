@@ -174,7 +174,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         <h1 className="text-3xl font-display mb-6">Dashboard</h1>
         <div className="text-muted-foreground">Loading analytics...</div>
       </div>
@@ -391,7 +391,7 @@ export default function Dashboard() {
                   <div>
                     <p className="font-medium">{alert.product_name}</p>
                     <p className="text-sm text-muted-foreground">
-                      Batch: {alert.batch_number} • Qty: {alert.quantity_remaining} • Expires in {alert.days_until_expiry} days
+                      Batch: {alert.batch_number} • Qty: {alert.quantity_remaining} • Expires in {Math.round(alert.days_until_expiry)} days
                     </p>
                   </div>
                   <Badge 

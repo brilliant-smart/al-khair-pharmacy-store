@@ -283,27 +283,13 @@ export default function PurchaseOrderDetail() {
   const handleExportPDF = async () => {
     try {
       // Get the auth token
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('alkhair_auth_token');
       
-      // Open PDF in new window with auth header
-      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/purchase-orders/${id}/pdf`;
+      // Open PDF in new window
+      const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const url = `${backendUrl}/admin/purchase-orders/${id}/pdf?token=${token}`;
       
-      // Create a form and submit it to open in new window with auth
-      const form = document.createElement('form');
-      form.method = 'GET';
-      form.action = url;
-      form.target = '_blank';
-      
-      // Add auth token as a parameter
-      const tokenInput = document.createElement('input');
-      tokenInput.type = 'hidden';
-      tokenInput.name = 'token';
-      tokenInput.value = token || '';
-      form.appendChild(tokenInput);
-      
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
+      window.open(url, '_blank');
     } catch (error: any) {
       toast.error('Failed to open PDF');
     }
@@ -401,11 +387,11 @@ export default function PurchaseOrderDetail() {
   };
 
   if (loading) {
-    return <div className="p-6">Loading...</div>;
+    return <div className="p-4 md:p-6">Loading...</div>;
   }
 
   if (!order) {
-    return <div className="p-6">Purchase order not found</div>;
+    return <div className="p-4 md:p-6">Purchase order not found</div>;
   }
 
   // Enhanced status badge with workflow awareness

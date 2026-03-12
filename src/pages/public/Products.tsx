@@ -128,11 +128,17 @@ export default function Products() {
                 to={`/products/${product.slug}`}
                 className="group bg-background rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
               >
-                <div className="relative aspect-square overflow-hidden bg-muted">
+                <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img
                     src={imageUrl(product)}
                     alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (target.src !== PLACEHOLDER_IMAGE) {
+                        target.src = PLACEHOLDER_IMAGE;
+                      }
+                    }}
                   />
                 </div>
                 <div className="p-4">
