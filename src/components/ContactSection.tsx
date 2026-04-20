@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   MapPin,
   Phone,
@@ -10,6 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import axios from "axios";
+import { API_BASE } from "@/config/api";
 
 const STORE_COORDINATES = {
   lat: 10.3107763889513,
@@ -27,7 +31,7 @@ const contactInfo = [
   {
     icon: MapPin,
     title: "Visit Our Store",
-    details: ["No. C10, Kobi Street,", "Off Gwallaga Street, Bauchi"],
+    details: ["No. C12, Kobi Street,", "Off Gwallaga Street, Bauchi"],
   },
   {
     icon: Phone,
@@ -47,6 +51,57 @@ const contactInfo = [
 ];
 
 export function ContactSection() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.name || !formData.email || !formData.phone || !formData.subject || !formData.message) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${API_BASE}/contact`, formData);
+      toast.success("Thank you for contacting us! We'll get back to you soon.");
+      
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error: any) {
+      console.error("Contact form error:", error);
+      toast.error(
+        error.response?.data?.message || 
+        "Sorry, there was an error sending your message. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-20 bg-background relative">
       {/* Decorative elements */}
@@ -185,15 +240,19 @@ export function ContactSection() {
                 Complete the form below and we’ll respond as soon as possible.
               </p>
 
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleSubmit}>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="font-body text-sm font-medium text-foreground block mb-2">
                       Full Name
                     </label>
                     <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
                       placeholder="Salisu Abubakar"
                       className="h-12 font-body bg-background border-border"
+                      required
                     />
                   </div>
                   <div>
@@ -201,8 +260,12 @@ export function ContactSection() {
                       Phone Number
                     </label>
                     <Input
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
                       placeholder="+234 706 313 4838"
                       className="h-12 font-body bg-background border-border"
+                      required
                     />
                   </div>
                 </div>
@@ -211,9 +274,13 @@ export function ContactSection() {
                     Email Address
                   </label>
                   <Input
+                    name="email"
                     type="email"
+                    value={formData.email}
+                    onChange={handleChange}
                     placeholder="salisu@example.com"
                     className="h-12 font-body bg-background border-border"
+                    required
                   />
                 </div>
                 <div>
@@ -221,8 +288,12 @@ export function ContactSection() {
                     Subject
                   </label>
                   <Input
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
                     placeholder="How can we assist you?"
                     className="h-12 font-body bg-background border-border"
+                    required
                   />
                 </div>
                 <div>
@@ -230,16 +301,21 @@ export function ContactSection() {
                     Message
                   </label>
                   <Textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
                     placeholder="Please write your message here…"
                     rows={4}
                     className="font-body bg-background border-border resize-none"
+                    required
                   />
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-12 font-body text-base gradient-primary hover:opacity-90 transition-opacity"
+                  disabled={isSubmitting}
+                  className="w-full h-12 font-body text-base gradient-primary hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
-                  Send Message
+                  {isSubmitting ? "Sending..." : "Send Message"}
                 </Button>
               </form>
             </div>

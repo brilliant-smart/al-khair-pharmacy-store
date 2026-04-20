@@ -1,7 +1,7 @@
 import { api } from "@/app/lib/api";
 
 export const getProducts = (departmentId?: number) => {
-  return api.get("/products", {
+  return api.get("/admin/products", {
     params: {
       ...(departmentId ? { department_id: departmentId } : {}),
       limit: 1000, // Get all products for admin panel (no pagination)

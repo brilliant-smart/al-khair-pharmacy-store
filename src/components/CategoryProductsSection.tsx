@@ -215,15 +215,10 @@ export function CategoryProductsSection({
                 </div>
               )}
               {displayProducts.map((product) => {
-                const CardWrapper = product.slug ? Link : "div";
-                const cardProps = product.slug
-                  ? { to: `/products/${product.slug}` }
-                  : {};
                 return (
                   <motion.div key={product.id} variants={itemVariants}>
-                    <CardWrapper
-                    {...cardProps}
-                    className="group bg-background rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-elegant transition-all duration-500 block"
+                    <div
+                    className="group bg-background rounded-xl overflow-hidden border border-border"
                   >
                     {/* Image container */}
                     <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center">
@@ -289,7 +284,7 @@ export function CategoryProductsSection({
                         </div>
                       </div>
                     </div>
-                  </CardWrapper>
+                  </div>
                 </motion.div>
               );
             })}

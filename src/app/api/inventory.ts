@@ -4,7 +4,7 @@ export interface StockMovement {
   id: number;
   product_id: number;
   user_id: number;
-  type: 'purchase' | 'sale' | 'adjustment' | 'damage' | 'return' | 'initial';
+  type: "purchase" | "sale" | "adjustment" | "damage" | "return" | "initial";
   quantity: number;
   previous_stock: number;
   new_stock: number;
@@ -28,7 +28,7 @@ export interface InventorySummary {
 
 export interface StockAdjustmentRequest {
   quantity: number;
-  type?: 'purchase' | 'sale' | 'adjustment' | 'damage' | 'return' | 'initial';
+  type?: "purchase" | "sale" | "adjustment" | "damage" | "return" | "initial";
   notes?: string;
   unit_cost?: number;
 }
@@ -38,9 +38,12 @@ export interface StockAdjustmentRequest {
  */
 export const addStock = async (
   productId: number,
-  data: StockAdjustmentRequest
+  data: StockAdjustmentRequest,
 ): Promise<any> => {
-  const response = await api.post(`/inventory/products/${productId}/add-stock`, data);
+  const response = await api.post(
+    `/inventory/products/${productId}/add-stock`,
+    data,
+  );
   return response.data;
 };
 
@@ -49,9 +52,12 @@ export const addStock = async (
  */
 export const reduceStock = async (
   productId: number,
-  data: Omit<StockAdjustmentRequest, 'unit_cost'>
+  data: Omit<StockAdjustmentRequest, "unit_cost">,
 ): Promise<any> => {
-  const response = await api.post(`/inventory/products/${productId}/reduce-stock`, data);
+  const response = await api.post(
+    `/inventory/products/${productId}/reduce-stock`,
+    data,
+  );
   return response.data;
 };
 
@@ -61,20 +67,27 @@ export const reduceStock = async (
 export const adjustStock = async (
   productId: number,
   quantity: number,
-  notes?: string
+  notes?: string,
 ): Promise<any> => {
-  const response = await api.post(`/inventory/products/${productId}/adjust-stock`, {
-    quantity,
-    notes,
-  });
+  const response = await api.post(
+    `/inventory/products/${productId}/adjust-stock`,
+    {
+      quantity,
+      notes,
+    },
+  );
   return response.data;
 };
 
 /**
  * Get stock movement history for a product
  */
-export const getStockHistory = async (productId: number): Promise<StockMovement[]> => {
-  const response = await api.get(`/inventory/products/${productId}/stock-history`);
+export const getStockHistory = async (
+  productId: number,
+): Promise<StockMovement[]> => {
+  const response = await api.get(
+    `/inventory/products/${productId}/stock-history`,
+  );
   return response.data;
 };
 
@@ -82,7 +95,7 @@ export const getStockHistory = async (productId: number): Promise<StockMovement[
  * Get low stock products
  */
 export const getLowStockProducts = async (): Promise<any[]> => {
-  const response = await api.get('/inventory/low-stock');
+  const response = await api.get("/inventory/low-stock");
   return response.data;
 };
 
@@ -90,7 +103,7 @@ export const getLowStockProducts = async (): Promise<any[]> => {
  * Get out of stock products
  */
 export const getOutOfStockProducts = async (): Promise<any[]> => {
-  const response = await api.get('/inventory/out-of-stock');
+  const response = await api.get("/inventory/out-of-stock");
   return response.data;
 };
 
@@ -98,7 +111,7 @@ export const getOutOfStockProducts = async (): Promise<any[]> => {
  * Get inventory summary statistics
  */
 export const getInventorySummary = async (): Promise<InventorySummary> => {
-  const response = await api.get('/inventory/summary');
+  const response = await api.get("/inventory/summary");
   return response.data;
 };
 
@@ -107,9 +120,9 @@ export const getInventorySummary = async (): Promise<InventorySummary> => {
  */
 export const bulkUpdateStock = async (
   updates: Array<{ product_id: number; quantity: number }>,
-  notes?: string
+  notes?: string,
 ): Promise<any> => {
-  const response = await api.post('/inventory/bulk-update', {
+  const response = await api.post("/inventory/bulk-update", {
     updates,
     notes,
   });

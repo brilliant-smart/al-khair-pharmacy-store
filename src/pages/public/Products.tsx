@@ -123,16 +123,15 @@ export default function Products() {
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {products.map((product) => (
-              <Link
+              <div
                 key={product.id}
-                to={`/products/${product.slug}`}
-                className="group bg-background rounded-xl overflow-hidden border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
+                className="group bg-background rounded-xl overflow-hidden border border-border"
               >
                 <div className="relative aspect-square overflow-hidden bg-gray-100 flex items-center justify-center">
                   <img
                     src={imageUrl(product)}
                     alt={product.name}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       if (target.src !== PLACEHOLDER_IMAGE) {
@@ -142,14 +141,14 @@ export default function Products() {
                   />
                 </div>
                 <div className="p-4">
-                  <h3 className="font-body font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                  <h3 className="font-body font-semibold text-foreground line-clamp-2">
                     {product.name}
                   </h3>
                   <p className="font-body text-base font-bold text-foreground mt-1">
                     ₦{Number(product.price).toLocaleString()}
                   </p>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 

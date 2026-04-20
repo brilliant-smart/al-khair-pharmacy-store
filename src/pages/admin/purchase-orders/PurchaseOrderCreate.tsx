@@ -253,11 +253,8 @@ export default function PurchaseOrderCreate() {
           return;
         }
         
-        // Check if expiry date is required
-        if (product.track_expiry && !item.expiry_date) {
-          toast.error(`Expiry date is required for "${product.name}" (Item ${i + 1})`);
-          return;
-        }
+        // Expiry date is optional even if track_expiry is enabled
+        // No validation needed here - expiry tracking is for notification purposes only
         
         // Validate expiry date is in the future if provided
         if (item.expiry_date) {

@@ -16,7 +16,8 @@ export default function AppRoutes() {
       {/* Public landing page */}
       <Route path="/" element={<Index />} />
       <Route path="/products" element={<Products />} />
-      <Route path="/products/:slug" element={<ProductDetails />} />
+      {/* Product detail pages disabled - redirect to home */}
+      <Route path="/products/:slug" element={<Navigate to="/" replace />} />
 
       {/* Auth */}
       <Route path="/login" element={<Login />} />
